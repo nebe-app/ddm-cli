@@ -1,15 +1,15 @@
 {
-  "name": "nebe-cli-next",
-  "version": "0.0.0",
+  "name": "ddm-cli",
+  "version": "2.0.0",
   "description": "Development stack for creating DDM visuals",
   "author": "Patrik Janosdeak @truesteps",
   "bin": {
-    "nebe": "./bin/run"
+    "ddm": "./bin/run"
   },
-  "homepage": "https://github.com/nebe-app/nebe-cli-next",
-  "license": "Apache-2.0 License",
+  "homepage": "https://github.com/nebe-app/ddm-cli",
+  "license": "Apache-2.0",
   "main": "dist/index.js",
-  "repository": "nebe-app/nebe-cli-next",
+  "repository": "nebe-app/ddm-cli",
   "files": [
     "/bin",
     "/dist",
@@ -18,8 +18,14 @@
   ],
   "dependencies": {
     "@oclif/core": "^1",
+    "@oclif/plugin-autocomplete": "^1.2.0",
     "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^2.0.1"
+    "@oclif/plugin-not-found": "^2.3.1",
+    "@oclif/plugin-update": "^3.0.0",
+    "@sentry/node": "^6.19.7",
+    "axios": "^0.27.2",
+    "configstore": "^6.0.0",
+    "fs": "^0.0.1-security"
   },
   "devDependencies": {
     "@oclif/test": "^2",
@@ -39,12 +45,14 @@
     "typescript": "^4.4.3"
   },
   "oclif": {
-    "bin": "nebe",
-    "dirname": "nebe",
+    "bin": "ddm",
+    "dirname": "ddm",
     "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
+      "@oclif/plugin-not-found",
+      "@oclif/plugin-update",
+      "@oclif/plugin-autocomplete"
     ],
     "topicSeparator": " ",
     "topics": {
@@ -65,7 +73,7 @@
   "engines": {
     "node": ">=12.0.0"
   },
-  "bugs": "https://github.com/nebe-app/nebe-cli-next/issues",
+  "bugs": "https://github.com/nebe-app/ddm-cli/issues",
   "keywords": [
     "oclif"
   ],
