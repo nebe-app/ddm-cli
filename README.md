@@ -1,45 +1,46 @@
-oclif-hello-world
+DDM Cli
 =================
 
-oclif example Hello World CLI
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/oclif-hello-world.svg)](https://npmjs.org/package/oclif-hello-world)
-[![CircleCI](https://circleci.com/gh/oclif/hello-world/tree/main.svg?style=shield)](https://circleci.com/gh/oclif/hello-world/tree/main)
-[![Downloads/week](https://img.shields.io/npm/dw/oclif-hello-world.svg)](https://npmjs.org/package/oclif-hello-world)
-[![License](https://img.shields.io/npm/l/oclif-hello-world.svg)](https://github.com/oclif/hello-world/blob/main/package.json)
-
 <!-- toc -->
+
 * [Usage](#usage)
 * [Commands](#commands)
+
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
+
 ```sh-session
-$ npm install -g nebe-cli-next
-$ nebe COMMAND
+$ npm install -g ddm-cli
+$ ddm COMMAND
 running command...
-$ nebe (--version)
-nebe-cli-next/0.0.0 darwin-x64 node-v14.17.3
-$ nebe --help [COMMAND]
+$ ddm (--version)
+ddm-cli/0.0.0 darwin-x64 node-v14.17.3
+$ ddm --help [COMMAND]
 USAGE
-  $ nebe COMMAND
+  $ ddm COMMAND
 ...
 ```
-<!-- usagestop -->
-# Commands
-<!-- commands -->
-* [`nebe hello PERSON`](#nebe-hello-person)
-* [`nebe hello world`](#nebe-hello-world)
-* [`nebe help [COMMAND]`](#nebe-help-command)
 
-## `nebe hello PERSON`
+<!-- usagestop -->
+
+# Commands
+
+<!-- commands -->
+
+* [`ddm hello PERSON`](#ddm-hello-person)
+* [`ddm hello world`](#ddm-hello-world)
+* [`ddm help [COMMAND]`](#ddm-help-command)
+
+## `ddm hello PERSON`
 
 Say hello
 
 ```
 USAGE
-  $ nebe hello [PERSON] -f <value>
+  $ ddm hello [PERSON] -f <value>
 
 ARGUMENTS
   PERSON  Person to say hello to
@@ -55,15 +56,15 @@ EXAMPLES
   hello friend from oclif! (./src/commands/hello/index.ts)
 ```
 
-_See code: [dist/commands/hello/index.ts](https://github.com/nebe-app/nebe-cli-next/blob/v0.0.0/dist/commands/hello/index.ts)_
+_See code: [dist/commands/hello/index.ts](https://github.com/ddm-app/ddm-cli/blob/v0.0.0/dist/commands/hello/index.ts)_
 
-## `nebe hello world`
+## `ddm hello world`
 
 Say hello world
 
 ```
 USAGE
-  $ nebe hello world
+  $ ddm hello world
 
 DESCRIPTION
   Say hello world
@@ -73,13 +74,13 @@ EXAMPLES
   hello world! (./src/commands/hello/world.ts)
 ```
 
-## `nebe help [COMMAND]`
+## `ddm help [COMMAND]`
 
-Display help for nebe.
+Display help for ddm.
 
 ```
 USAGE
-  $ nebe help [COMMAND] [-n]
+  $ ddm help [COMMAND] [-n]
 
 ARGUMENTS
   COMMAND  Command to show help for.
@@ -88,8 +89,9 @@ FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
 DESCRIPTION
-  Display help for nebe.
+  Display help for ddm.
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.10/src/commands/help.ts)_
+
 <!-- commandsstop -->
