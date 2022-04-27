@@ -6,21 +6,24 @@ import { getUsername, getPassword } from '../utils/configGetters';
 import apiUrl from '../utils/apiUrl';
 
 export class TestCliController extends BaseCommand {
-  static description = 'Test whether CLI Controller in app is working';
+	static description = 'Test whether CLI Controller in app is working';
 
-  async run(): Promise<void> {
-    const username = getUsername();
-    const password = getPassword();
+	// hide the command from help
+	static hidden = true
 
-    try {
-      const { data } = await axios.get(apiUrl('visual'), {
-        auth: { username, password }
-      });
+	async run(): Promise<void> {
+		const username = getUsername();
+		const password = getPassword();
 
-      console.log(data);
-    } catch (error) {
-      Sentry.captureException(error);
-      console.log(error);
-    }
-  }
+		try {
+			const { data } = await axios.get(apiUrl('visual'), {
+				auth: { username, password }
+			});
+
+			console.log(data);
+		} catch (error) {
+			Sentry.captureException(error);
+			console.log(error);
+		}
+	}
 }
