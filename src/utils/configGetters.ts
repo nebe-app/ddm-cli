@@ -1,4 +1,4 @@
-const config = require('./config');
+import config from './config';
 
 const isSazka = function (): boolean {
   const [, , ...args] = process.argv;

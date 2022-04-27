@@ -24,12 +24,14 @@
     "@oclif/plugin-update": "^3.0.0",
     "@sentry/node": "^6.19.7",
     "axios": "^0.27.2",
-    "configstore": "^6.0.0",
-    "fs": "^0.0.1-security"
+    "configstore": "^5.0.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "@oclif/test": "^2",
     "@types/chai": "^4",
+    "@types/configstore": "^5.0.1",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.4",
     "chai": "^4",
