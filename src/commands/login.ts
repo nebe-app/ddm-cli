@@ -13,7 +13,7 @@ import apiUrl from '../utils/apiUrl';
 import { getRoot, setConfig, isSazka } from '../utils/configGetters';
 
 export class Login extends BaseCommand {
-	static description = 'Authorize CLI agains web application';
+	static description = 'Authorize CLI against web application';
 
 	static flags = {
 		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
