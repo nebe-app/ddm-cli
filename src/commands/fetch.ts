@@ -23,7 +23,7 @@ export class Fetch extends BaseCommand {
 		const root: string = getRoot();
 		const brandFolders: string[] = await getDirectories(path.join(root, 'src'));
 		const tasks: ListrTask[] = [];
-		const brands = brandFolders.filter((folder: string) => {
+		const brands: string[] = brandFolders.filter((folder: string) => {
 			return folder[0] !== '.';
 		});
 
@@ -32,9 +32,9 @@ export class Fetch extends BaseCommand {
 				continue;
 			}
 
-			const brand = brands[brandIndex];
-			const visualFolders = await getDirectories(path.join(root, 'src', brand));
-			const visuals = visualFolders.filter((folder: string) => {
+			const brand: string = brands[brandIndex];
+			const visualFolders: string[] = await getDirectories(path.join(root, 'src', brand));
+			const visuals: string[] = visualFolders.filter((folder: string) => {
 				return folder[0] !== '.';
 			});
 
