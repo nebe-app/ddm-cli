@@ -9,13 +9,14 @@ import notifier from 'node-notifier';
 import express from 'express';
 import simpleGit from 'simple-git';
 import rimraf from 'rimraf';
+import Listr from 'listr';
 import * as Sentry from '@sentry/node';
 
 import BaseCommand from '../BaseCommand';
 import getFill from '../utils/getFill';
 import checkConfig from '../utils/checkConfig';
 import checkSchema from '../utils/checkSchema';
-import getDirectories from '../utils/getDirectories';
+import selectVisual from '../utils/selectVisual';
 import { getRoot, getLastDev, getConfig, setConfig, isSazka } from '../utils/configGetters';
 import { Flags } from '@oclif/core';
 import ParcelBundler from 'parcel-bundler';
@@ -104,7 +105,7 @@ export class Dev extends BaseCommand {
 		}
 
 		if (!visualPath) {
-			visualPath = await this.selectVisual();
+			visualPath = await selectVisual();
 		}
 
 		console.log(`Building ${visualPath}`);
@@ -221,6 +222,7 @@ export class Dev extends BaseCommand {
 
 		if (selectedFolders.length === 0) {
 			console.error('🛑 Nevybrány žádné rozměry');
+
 			notifier.notify({
 				title: 'Nelze spustit devstack',
 				message: `🛑 Nevybrány žádné rozměry`,
@@ -233,168 +235,52 @@ export class Dev extends BaseCommand {
 		console.log(`Running bundlers for resizes: ${selectedFolders}`);
 
 		state.bundlers = {};
+		const tasks = [];
 
 		for (let i in selectedFolders) {
-			if (selectedFolders.hasOwnProperty(i) === false) {
+			if (!selectedFolders.hasOwnProperty(i)) {
 				continue;
 			}
 
-			state.bundlers[i] = {};
-
-			const entryPoint = `${root}/src/${visualPath}/${selectedFolders[i]}/index.html`;
 			const folder = selectedFolders[i];
+			const port = basePort + parseInt(i);
 
-			state.bundlers[i].folder = folder;
+			tasks.push({
+				title: `Serving ${folder} on http://localhost:${port}`,
+				task: async () => {
+					const {
+						results,
+						bundler
+					} = await this.startBundler(
+						root,
+						visualPath,
+						bundlerFolder,
+						folder,
+						port,
+						fill,
+						debug,
+						local
+					);
 
-			try {
-				const options = {
-					outDir: `${bundlerFolder}/dist/${folder}`,
-					outFile: 'index.html',
-					publicUrl: '/',
-					watch: true,
-					cache: false,
-					//cacheDir: bundlerFolder + '/.cache/' + i,
-					minify: true,
-					logLevel: 2,
-					autoInstall: true,
+					state.bundlers[i] = results;
 
-					contentHash: false,
-					global: 'VISUAL',
-					scopeHoist: false,
-					target: 'browser',
-					bundleNodeModules: false,
-					hmr: true,
-					sourceMaps: true,
-					detailedReport: true
-				};
-				// @ts-ignore
-				const bundler = new Bundler(entryPoint, options);
-				const port = basePort + parseInt(i);
-
-				let isFirstBundle = true;
-
-				bundler.on('buildStart', (entryPoints) => {
-					if (debug) {
-						console.log(`${folder} buildStart ${JSON.stringify(entryPoints)}`);
+					if (bundler) {
+						bundlers.push(bundler);
 					}
-				});
-
-				bundler.on('buildError', (error) => {
-					console.log(`${folder} buildError`);
-					console.error(error);
-				});
-
-				bundler.on('buildEnd', () => {
-					if (debug) {
-						console.log(`${folder} buildEnd`);
-					}
-				});
-
-				bundler.on('bundled', (bundle) => {
-					if (debug) {
-						//console.log(bundle.childBundles);
-					}
-
-					const visualClientScript = local
-						? `<script src="http://localhost:1236/visual-client.min.js?cb=${new Date().getTime()}"></script>`
-						: `<script src="https://cdn.nebe.app/store/serving/dist/visual-client.min.js?cb=${new Date().getTime()}"></script>`;
-
-					if (debug) {
-						console.log(`Using VisualClient on URL ${visualClientScript}`);
-					}
-
-					let markupContents: string = fs.readFileSync(`${options.outDir}/index.html`).toString();
-
-					if (markupContents.indexOf('<!--NEBE_POLYFILLS-->') === -1) {
-						debug ? console.log('Adding NEBE_POLYFILLS to markup') : true;
-						markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_POLYFILLS--><script src="https://cdnjs.cloudflare.com/ajax/libs/promise-polyfill/8.1.3/polyfill.min.js"></script><script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.7/runtime.min.js"></script><!--/NEBE_POLYFILLS-->\n</head>`);
-					} else {
-						debug ? console.log('NEBE_POLYFILLS already in markup') : true;
-					}
-
-					if (markupContents.indexOf('<!--NEBE_DEMO_FILL-->') === -1) {
-						debug ? console.log('Adding NEBE_DEMO_FILL to markup') : true;
-						markupContents = markupContents.replace(`</body>`, `\n<!--NEBE_DEMO_FILL-->\n${fill}\n<!--/NEBE_DEMO_FILL-->\n</body>`);
-					} else {
-						debug ? console.log('NEBE_DEMO_FILL already in markup') : true;
-					}
-
-					if (markupContents.indexOf('<!--NEBE_VISUAL_CLIENT-->') === -1) {
-						debug ? console.log('Adding NEBE_VISUAL_CLIENT to markup') : true;
-						markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_CLIENT-->\n${visualClientScript}\n<!--/NEBE_VISUAL_CLIENT-->\n</head>`);
-					} else {
-						debug ? console.log('NEBE_VISUAL_CLIENT already in markup') : true;
-					}
-
-					if (markupContents.indexOf('<!--NEBE_ENV-->') === -1) {
-						debug ? console.log('Adding NEBE_ENV to markup') : true;
-						// ToDo: investigate why this is not working
-						// @ts-ignore
-						markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_ENV-->\n<script>window.MODE = 'dev'; window.FOLDER = '${folder}';</script>\n<!--/NEBE_ENV-->\n</head>`);
-					} else {
-						debug ? console.log('NEBE_ENV already in markup') : true;
-					}
-
-					if (markupContents.indexOf('<!--NEBE_DOCUMENT_TITLE-->') === -1) {
-						debug ? console.log('Adding NEBE_DOCUMENT_TITLE to markup') : true;
-						markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_DOCUMENT_TITLE-->\n<script>document.title = "${folder} ${visualPath}";</script>\n<!--/NEBE_DOCUMENT_TITLE-->\n</head>`);
-					} else {
-						debug ? console.log('NEBE_DOCUMENT_TITLE already in markup') : true;
-					}
-
-					// Helper
-
-					const visualHelperUrl = local
-						? 'http://localhost:1235/'
-						: 'https://cdn.nebe.app/store/utils/dist/';
-
-					if (debug) {
-						console.log(`Using VisualHelper on URL ${visualHelperUrl}`);
-					}
-
-					if (markupContents.indexOf('<!--NEBE_VISUAL_HELPER-->') === -1) {
-						debug ? console.log('Adding NEBE_VISUAL_HELPER to markup') : true;
-						markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_HELPER-->\n<link rel="stylesheet" href="${visualHelperUrl}visual-helper.min.css" type="text/css">\n<script src="${visualHelperUrl}visual-helper.min.js"></script>\n<!--/NEBE_VISUAL_HELPER-->\n</head>`);
-					} else {
-						debug ? console.log('NEBE_VISUAL_HELPER already in markup') : true;
-					}
-
-					// Write it
-
-					fs.writeFileSync(`${options.outDir}/index.html`, markupContents);
-
-					if (markupContents.indexOf('<main>') === -1 && markupContents.indexOf('<main ') === -1) {
-						console.error(chalk.red(`Resize ${folder} does not contain element <main>!`));
-					}
-
-					if (isFirstBundle) {
-						isFirstBundle = false;
-					} else {
-						console.log(`Bundled ${folder} on http://localhost:${port}`);
-					}
-				});
-
-				await bundler.serve(port);
-				console.log(`${parseInt(i) + 1}/${selectedFolders.length} Serving ${folder} on http://localhost:${port}`);
-				bundlers.push(bundler);
-
-				state.bundlers[i].error = false;
-				state.bundlers[i].port = port;
-
-			} catch (error) {
-				Sentry.captureException(error);
-				console.error(`${parseInt(i) + 1}/${folders.length} Error ${folder}`);
-
-				console.error(error);
-				state.bundlers[i].error = false;
-			}
+				}
+			})
 		}
+
+		const runner = new Listr(tasks, { renderer: debug ? 'verbose' : 'default' });
+
+		await runner.run();
 
 		console.log('Listening to file changes... Press Ctrl+C to stop servers');
 
 		if (fs.existsSync(schemaPath)) {
 			fs.watch(schemaPath, {}, async () => {
 				console.log('Schema changed, checking and rebundling...');
+
 				setTimeout(async () => {
 					await checkSchema(schemaPath, state);
 					fill = getFill(schemaPath);
@@ -476,72 +362,152 @@ export class Dev extends BaseCommand {
 		return lastVisualAnswers.first === 'Ano' ? lastVisualContent : null;
 	}
 
-	async selectVisual() {
-		const root = getRoot();
-
-		const brandFolders = await getDirectories(path.join(root, 'src'));
-		const brands = brandFolders.filter((folder) => {
-			return folder[0] !== '.';
-		});
-
-		if (!brands.length) {
-			console.error('No brands');
-			process.exit();
-		}
-
-		let selectedBrand: string | null = null;
-
-		if (brands.length === 1) {
-			selectedBrand = brands[0];
-		} else {
-			const brandChoices = {
-				type: 'list',
-				name: 'selectedBrand',
-				message: 'Select brand',
-				choices: brands.map((brandPath) => brandPath.toString()
-					.replace(`${root}/src/`, '')
-					.replace('/brand.json', ''))
-			};
-
-			const brandAnswers = await inquirer.prompt([brandChoices]);
-			selectedBrand = brandAnswers.selectedBrand;
-
-			console.log(selectedBrand);
-		}
-
-		if (!selectedBrand) {
-			console.log(chalk.red('No brand selected'));
-			process.exit();
-		}
-
-		// Visual
-
-		const visualFolders = await getDirectories(path.join(root, 'src', selectedBrand));
-		const visuals = visualFolders.filter((folder) => {
-			return folder[0] !== '.';
-		});
-
-		if (!visuals.length) {
-			console.error('No visuals');
-			process.exit();
-		}
-
-		visuals.reverse();
-
-		const visualsChoices = {
-			type: 'list',
-			name: 'first',
-			message: 'Select visual',
-			choices: visuals.map((visualPath) => visualPath
-				.toString()
-				.replace(`${root}/src/${selectedBrand}/`, '')
-				.replace(`/`, '')
-			)
+	async startBundler(
+		root: string,
+		visualPath: string | null,
+		bundlerFolder: string,
+		folder: string,
+		port: number,
+		fill: any,
+		debug: boolean,
+		local: boolean
+	): Promise<any> {
+		const entryPoint = `${root}/src/${visualPath}/${folder}/index.html`;
+		const results: any = {
+			folder,
 		};
 
-		const visualAnswers = await inquirer.prompt([visualsChoices]);
-		const selectedVisual = visualAnswers.first;
+		try {
+			const options = {
+				outDir: `${bundlerFolder}/dist/${folder}`,
+				outFile: 'index.html',
+				publicUrl: '/',
+				watch: true,
+				cache: false,
+				//cacheDir: bundlerFolder + '/.cache/' + i,
+				minify: true,
+				logLevel: 2,
+				autoInstall: true,
 
-		return `${selectedBrand}/${selectedVisual}`;
+				contentHash: false,
+				global: 'VISUAL',
+				scopeHoist: false,
+				target: 'browser',
+				bundleNodeModules: false,
+				hmr: true,
+				sourceMaps: true,
+				detailedReport: true
+			};
+			// @ts-ignore
+			const bundler = new Bundler(entryPoint, options);
+
+			bundler.on('buildStart', (entryPoints) => {
+				if (debug) {
+					console.log(`${folder} buildStart ${JSON.stringify(entryPoints)}`);
+				}
+			});
+
+			bundler.on('buildError', (error) => {
+				console.log(`${folder} buildError`);
+				console.error(error);
+			});
+
+			bundler.on('buildEnd', () => {
+				if (debug) {
+					console.log(`${folder} buildEnd`);
+				}
+			});
+
+			bundler.on('bundled', (bundle) => {
+				if (debug) {
+					//console.log(bundle.childBundles);
+				}
+
+				const visualClientScript = local
+					? `<script src="http://localhost:1236/visual-client.min.js?cb=${new Date().getTime()}"></script>`
+					: `<script src="https://cdn.nebe.app/store/serving/dist/visual-client.min.js?cb=${new Date().getTime()}"></script>`;
+
+				if (debug) {
+					console.log(`Using VisualClient on URL ${visualClientScript}`);
+				}
+
+				let markupContents: string = fs.readFileSync(`${options.outDir}/index.html`).toString();
+
+				if (markupContents.indexOf('<!--NEBE_POLYFILLS-->') === -1) {
+					debug ? console.log('Adding NEBE_POLYFILLS to markup') : true;
+					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_POLYFILLS--><script src="https://cdnjs.cloudflare.com/ajax/libs/promise-polyfill/8.1.3/polyfill.min.js"></script><script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.7/runtime.min.js"></script><!--/NEBE_POLYFILLS-->\n</head>`);
+				} else {
+					debug ? console.log('NEBE_POLYFILLS already in markup') : true;
+				}
+
+				if (markupContents.indexOf('<!--NEBE_DEMO_FILL-->') === -1) {
+					debug ? console.log('Adding NEBE_DEMO_FILL to markup') : true;
+					markupContents = markupContents.replace(`</body>`, `\n<!--NEBE_DEMO_FILL-->\n${fill}\n<!--/NEBE_DEMO_FILL-->\n</body>`);
+				} else {
+					debug ? console.log('NEBE_DEMO_FILL already in markup') : true;
+				}
+
+				if (markupContents.indexOf('<!--NEBE_VISUAL_CLIENT-->') === -1) {
+					debug ? console.log('Adding NEBE_VISUAL_CLIENT to markup') : true;
+					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_CLIENT-->\n${visualClientScript}\n<!--/NEBE_VISUAL_CLIENT-->\n</head>`);
+				} else {
+					debug ? console.log('NEBE_VISUAL_CLIENT already in markup') : true;
+				}
+
+				if (markupContents.indexOf('<!--NEBE_ENV-->') === -1) {
+					debug ? console.log('Adding NEBE_ENV to markup') : true;
+					// ToDo: investigate why this is not working
+					// @ts-ignore
+					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_ENV-->\n<script>window.MODE = 'dev'; window.FOLDER = '${folder}';</script>\n<!--/NEBE_ENV-->\n</head>`);
+				} else {
+					debug ? console.log('NEBE_ENV already in markup') : true;
+				}
+
+				if (markupContents.indexOf('<!--NEBE_DOCUMENT_TITLE-->') === -1) {
+					debug ? console.log('Adding NEBE_DOCUMENT_TITLE to markup') : true;
+					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_DOCUMENT_TITLE-->\n<script>document.title = "${folder} ${visualPath}";</script>\n<!--/NEBE_DOCUMENT_TITLE-->\n</head>`);
+				} else {
+					debug ? console.log('NEBE_DOCUMENT_TITLE already in markup') : true;
+				}
+
+				// Helper
+
+				const visualHelperUrl = local ? 'http://localhost:1235/' : 'https://cdn.nebe.app/store/utils/dist/';
+
+				if (debug) {
+					console.log(`Using VisualHelper on URL ${visualHelperUrl}`);
+				}
+
+				if (markupContents.indexOf('<!--NEBE_VISUAL_HELPER-->') === -1) {
+					debug ? console.log('Adding NEBE_VISUAL_HELPER to markup') : true;
+					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_HELPER-->\n<link rel="stylesheet" href="${visualHelperUrl}visual-helper.min.css" type="text/css">\n<script src="${visualHelperUrl}visual-helper.min.js"></script>\n<!--/NEBE_VISUAL_HELPER-->\n</head>`);
+				} else {
+					debug ? console.log('NEBE_VISUAL_HELPER already in markup') : true;
+				}
+
+				// Write it
+
+				fs.writeFileSync(`${options.outDir}/index.html`, markupContents);
+
+				if (markupContents.indexOf('<main>') === -1 && markupContents.indexOf('<main ') === -1) {
+					console.error(chalk.red(`Resize ${folder} does not contain element <main>!`));
+				}
+			});
+
+			await bundler.serve(port);
+
+			results.error = false;
+			results.port = port;
+
+			return { results, bundler };
+		} catch (error) {
+			Sentry.captureException(error);
+			console.error(`Error ${folder}`);
+
+			console.error(error);
+			results.error = false;
+		}
+
+		return { results, bundler: null };
 	}
 }

@@ -1,7 +1,5 @@
 import fs from 'fs-extra';
 import glob from 'glob';
-import inquirer from 'inquirer';
-import path from 'path';
 import chalk from 'chalk';
 import which from 'which';
 import Listr from 'listr';
@@ -9,7 +7,7 @@ import { Flags } from '@oclif/core';
 import { fromPath } from 'pdf2pic';
 
 import BaseCommand from '../BaseCommand';
-import getDirectories from '../utils/getDirectories';
+import selectVisual from '../utils/selectVisual';
 import { getRoot } from '../utils/configGetters';
 
 export class ConvertPdf extends BaseCommand {
@@ -49,7 +47,7 @@ export class ConvertPdf extends BaseCommand {
 			return;
 		}
 
-		const visualPath = await this.selectVisual();
+		const visualPath = await selectVisual();
 
 		const root = getRoot();
 		const pdfs = glob.sync(`${root}/src/${visualPath}/[!_][0-9]*/*.pdf`);
@@ -109,73 +107,4 @@ export class ConvertPdf extends BaseCommand {
 
 		await fs.promises.rename(`${savePath}/${filename}.1.jpg`, `${savePath}/${filename}.jpg`);
 	}
-
-	async selectVisual() {
-		const root = getRoot();
-
-		const brandFolders = await getDirectories(path.join(root, 'src'));
-		const brands = brandFolders.filter((folder) => {
-			return folder[0] !== '.';
-		});
-
-		if (!brands.length) {
-			console.error('No brands');
-			process.exit();
-		}
-
-		let selectedBrand: string | null = null;
-
-		if (brands.length === 1) {
-			selectedBrand = brands[0];
-		} else {
-			const brandChoices = {
-				type: 'list',
-				name: 'selectedBrand',
-				message: 'Select brand',
-				choices: brands.map((folder: string) => folder.toString()
-					.replace(`${root}/src/`, '')
-					.replace('/brand.json', ''))
-			};
-
-			const brandAnswers = await inquirer.prompt([brandChoices]);
-			selectedBrand = brandAnswers.selectedBrand;
-
-			console.log(selectedBrand);
-		}
-
-		if (!selectedBrand) {
-			console.log(chalk.red('No brand selected'));
-			process.exit();
-		}
-
-		// Visual
-
-		const visualFolders = await getDirectories(path.join(root, 'src', selectedBrand));
-		const visuals = visualFolders.filter((folder) => {
-			return folder[0] !== '.';
-		});
-
-		if (!visuals.length) {
-			console.error(chalk.red('No visuals'));
-			process.exit();
-		}
-
-		visuals.reverse();
-
-		const visualsChoices = {
-			type: 'list',
-			name: 'first',
-			message: 'Select visual',
-			choices: visuals.map((visualPath: string) => visualPath
-				.toString()
-				.replace(`${root}/src/${selectedBrand}/`, '')
-				.replace(`/`, '')
-			)
-		};
-
-		const visualAnswers = await inquirer.prompt([visualsChoices]);
-		const selectedVisual = visualAnswers.first;
-
-		return `${selectedBrand}/${selectedVisual}`;
-	};
 }
