@@ -1,6 +1,8 @@
 DDM Cli
 =================
 
+Development stack for creating DDM visuals
+
 # Usage
 
 <!-- usage -->
