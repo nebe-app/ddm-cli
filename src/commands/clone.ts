@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import fs from 'fs';
-import git from 'simple-git';
+import simpleGit from 'simple-git';
 import { getRoot, getUsername, getPassword } from '../utils/configGetters';
 
 import BaseCommand from '../BaseCommand';
@@ -10,10 +10,7 @@ export class Clone extends BaseCommand {
 		{ name: 'repoName', required: true },
 	];
 
-	static description = 'Clone a repository';
-
-	// hide the command from help
-	static hidden = true
+	static description = 'Clone existing visual';
 
 	async run(): Promise<void> {
 		const { args } = await this.parse(Clone);
@@ -56,7 +53,7 @@ export class Clone extends BaseCommand {
 
 		try {
 			console.log(chalk.blue('Starting cloning...'));
-			await git().clone(remote, `${root}/src/${repoName}`, { '--depth': '1' });
+			await simpleGit().clone(remote, `${root}/src/${repoName}`, { '--depth': '1' });
 			console.log(chalk.green('Repository successfully cloned'));
 		} catch (error) {
 			console.error(error);

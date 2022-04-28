@@ -1,21 +1,28 @@
-import * as fs from 'fs';
 import path from 'path';
-import chalk from 'chalk';
+import fs from 'fs';
 import simpleGit from 'simple-git';
 import Table from 'cli-table';
 
 import BaseCommand from '../BaseCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
+import chalk from 'chalk';
 
-export class Status extends BaseCommand {
-	static description = 'Git status of all visuals';
+export class Commit extends BaseCommand {
+	static description = 'Commit changes to the repository';
+
+	// hide the command from help
+	static hidden = true
 
 	async run(): Promise<void> {
 		const root = getRoot();
 		const git = simpleGit();
 		const brandFolders = await getDirectories(path.join(root, 'src'));
-		const brands = brandFolders.filter((folder: string) => folder[0] !== '.');
+
+		const brands = brandFolders.filter((folder) => {
+			return folder[0] !== '.';
+		});
+
 		const table = new Table({
 			head: ['Organization', 'Visual', 'Branch', 'Status']
 		});
@@ -42,18 +49,7 @@ export class Status extends BaseCommand {
 				const visual = visuals[visualIndex];
 				const visualPath = path.join(root, 'src', brand, visual);
 
-				const visualFiles = await fs.promises.readdir(visualPath, { withFileTypes: true });
-
-				if (visualFiles.length === 0) {
-					table.push([brand, visual, `Empty folder, deleting`]);
-					tableContainsRows = true;
-					await fs.promises.rmdir(visualPath);
-					continue;
-				}
-
 				if (!fs.existsSync(path.join(visualPath, '.git'))) {
-					table.push([brand, visual, `Git not initialized`]);
-					tableContainsRows = true;
 					continue;
 				}
 
@@ -70,6 +66,10 @@ export class Status extends BaseCommand {
 
 						table.push([brand, visual, currentBranch, `Changed ${status.files.length} files: ${fileNames}`]);
 						tableContainsRows = true;
+
+						await git.add('./*');
+						await git.commit(`Changed files: ${fileNames}`);
+						await git.push('origin', 'master');
 					}
 
 				} catch (error: any) {
@@ -82,7 +82,7 @@ export class Status extends BaseCommand {
 		if (tableContainsRows) {
 			console.log(table.toString());
 		} else {
-			console.log(chalk.green(`No changes ✅️`));
+			console.log(chalk.green(`Nothing to commit/push`));
 		}
 	}
 }
