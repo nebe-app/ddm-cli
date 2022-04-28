@@ -67,10 +67,15 @@ export class ConvertPdf extends BaseCommand {
 
 		const runner = new Listr(tasks, {
 			concurrent: true,
+			exitOnError: false,
 			renderer: debug ? 'verbose' : 'default',
 		});
 
-		await runner.run();
+		try {
+			await runner.run();
+		} catch (error) {
+			// do nothing (this is here to silence ugly errors thrown into the console, listr prints errors in a pretty way)
+		}
 	}
 
 	async convertPdf(pdf: string, root: string, visualPath: string) {
