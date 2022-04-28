@@ -143,8 +143,8 @@ export class ConvertPdf extends BaseCommand {
 			console.log(selectedBrand);
 		}
 
-		if (selectedBrand === null) {
-			console.error(chalk.red('No brand selected'));
+		if (!selectedBrand) {
+			console.log(chalk.red('No brand selected'));
 			process.exit();
 		}
 
