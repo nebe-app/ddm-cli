@@ -9,7 +9,7 @@ import { getRoot } from '../utils/configGetters';
 import Listr, { ListrContext, ListrTask, ListrTaskWrapper } from 'listr';
 
 export class Push extends BaseCommand {
-	static description = 'Push all visuals';
+	static description = 'Push all local visuals';
 
 	static flags = {
 		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),

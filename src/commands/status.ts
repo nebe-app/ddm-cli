@@ -9,7 +9,7 @@ import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 
 export class Status extends BaseCommand {
-	static description = 'Git status of all visuals';
+	static description = 'Git status of all local visuals';
 
 	async run(): Promise<void> {
 		const root = getRoot();

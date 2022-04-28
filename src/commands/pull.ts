@@ -9,7 +9,7 @@ import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 
 export class Pull extends BaseCommand {
-	static description = 'Pull all visuals';
+	static description = 'Pull all local visuals';
 
 	static flags = {
 		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
@@ -19,12 +19,10 @@ export class Pull extends BaseCommand {
 		const { flags } = await this.parse(Pull);
 		const { debug } = flags;
 
+		const tasks: ListrTask[] = [];
 		const root: string = getRoot();
 		const brandFolders: string[] = await getDirectories(path.join(root, 'src'));
-		const tasks: ListrTask[] = [];
-		const brands: string[] = brandFolders.filter((folder: string) => {
-			return folder[0] !== '.';
-		});
+		const brands: string[] = brandFolders.filter((folder: string) => folder[0] !== '.');
 
 		for (let brandIndex in brands) {
 			if (!brands.hasOwnProperty(brandIndex)) {
