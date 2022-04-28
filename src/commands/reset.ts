@@ -13,7 +13,7 @@ export class Reset extends BaseCommand {
 	static hidden = true;
 
 	async run(): Promise<void> {
-		const root = getRoot();
+		const root: string = getRoot();
 
 		rimraf.sync(path.join(root, 'node_modules'));
 		console.log(chalk.green('Deleted ' + path.join(root, 'node_modules')));
@@ -24,7 +24,7 @@ export class Reset extends BaseCommand {
 		rimraf.sync(path.join(root, 'package.json'));
 		console.log(chalk.green('Deleted ' + path.join(root, 'package.json')));
 
-		const packageJsonContents = fs.readJsonSync(path.join(__dirname, '..', 'assets', 'packageJsonTemplate.json'));
+		const packageJsonContents: object = fs.readJsonSync(path.join(__dirname, '..', 'assets', 'packageJsonTemplate.json'));
 
 		fs.writeFileSync(`${root}/package.json`, JSON.stringify(packageJsonContents, null, '\t'));
 		console.log(chalk.green('Created new ' + path.join(root, 'package.json')));
