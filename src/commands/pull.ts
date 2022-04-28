@@ -1,12 +1,12 @@
 import path from 'path';
 import fs from 'fs';
 import simpleGit from 'simple-git';
+import Listr, { ListrTask } from 'listr';
+import { Flags } from '@oclif/core';
 
 import BaseCommand from '../BaseCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
-import Listr, { ListrTask } from 'listr';
-import { Flags } from '@oclif/core';
 
 export class Pull extends BaseCommand {
 	static description = 'Pull all visuals';
@@ -66,7 +66,7 @@ export class Pull extends BaseCommand {
 		}
 	}
 
-	async fetchAndPull(visualPath: string) {
+	async fetchAndPull(visualPath: string): Promise<void> {
 		const git = simpleGit();
 
 		if (!fs.existsSync(path.join(visualPath, '.git'))) {

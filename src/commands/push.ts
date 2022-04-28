@@ -1,22 +1,22 @@
 import path from 'path';
 import fs from 'fs';
 import simpleGit from 'simple-git';
-import Listr, { ListrTask } from 'listr';
 import { Flags } from '@oclif/core';
 
 import BaseCommand from '../BaseCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
+import Listr, { ListrContext, ListrTask, ListrTaskWrapper } from 'listr';
 
-export class Fetch extends BaseCommand {
-	static description = 'Fetch all visuals';
+export class Push extends BaseCommand {
+	static description = 'Push all visuals';
 
 	static flags = {
 		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
 	}
 
 	async run(): Promise<void> {
-		const { flags } = await this.parse(Fetch);
+		const { flags } = await this.parse(Push);
 		const { debug } = flags;
 
 		const root: string = getRoot();
@@ -42,13 +42,13 @@ export class Fetch extends BaseCommand {
 					continue;
 				}
 
-				const visual = visuals[visualIndex];
-				const visualPath = path.join(root, 'src', brand, visual);
+				const visual: string = visuals[visualIndex];
+				const visualPath: string = path.join(root, 'src', brand, visual);
 
 				tasks.push({
-					title: `Fetching ${visualPath}`,
-					task: async () => await this.fetchVisual(visualPath),
-				});
+					title: `Pushing ${visualPath}`,
+					task: async (ctx: ListrContext, task: ListrTaskWrapper) => await this.push(visualPath, task),
+				})
 			}
 		}
 
@@ -65,7 +65,7 @@ export class Fetch extends BaseCommand {
 		}
 	}
 
-	async fetchVisual(visualPath: string) {
+	async push(visualPath: string, task: ListrTaskWrapper): Promise<void> {
 		const git = simpleGit();
 
 		if (!fs.existsSync(path.join(visualPath, '.git'))) {
@@ -73,6 +73,14 @@ export class Fetch extends BaseCommand {
 		}
 
 		await git.cwd(visualPath);
-		await git.fetch();
+		const status = await git.status();
+
+		if (status.files.length) {
+			await git.add('./*');
+			await git.commit(`Changes`);
+			await git.push('origin', 'master');
+		} else {
+			task.skip('No changes, skipping');
+		}
 	}
 }
