@@ -41,7 +41,7 @@ const getBin = function (): string {
 }
 
 const getCommand = function (command: string): string {
-	return isSazka() ? `nebe ${command} --sazka` : `nebe ${command}`;
+	return isSazka() ? `ddm ${command} --sazka` : `ddm ${command}`;
 }
 
 export { isSazka, isLocal, getRoot, getLastDev, getUsername, getPassword, setConfig, getConfig, getBin, getCommand };
