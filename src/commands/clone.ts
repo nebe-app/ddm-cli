@@ -55,7 +55,7 @@ export class Clone extends BaseCommand {
 		}
 
 		try {
-			console.log('Starting cloning...');
+			console.log(chalk.blue('Starting cloning...'));
 			await git().clone(remote, `${root}/src/${repoName}`, { '--depth': '1' });
 			console.log(chalk.green('Repository successfully cloned'));
 		} catch (error) {
