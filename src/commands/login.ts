@@ -9,8 +9,8 @@ import * as Sentry from '@sentry/node';
 import { Flags } from '@oclif/core';
 
 import BaseCommand from '../BaseCommand';
-import apiUrl from '../utils/apiUrl';
-import { getRoot, setConfig, isSazka } from '../utils/configGetters';
+import accountsUrl from '../utils/accountsUrl';
+import { getRoot, setConfig } from '../utils/configGetters';
 
 export class Login extends BaseCommand {
 	static description = 'Authorize CLI against web application';
@@ -39,7 +39,7 @@ export class Login extends BaseCommand {
 			const clientHash = crypto.randomBytes(40).toString('hex');
 			const secretHash = crypto.randomBytes(40).toString('hex');
 
-			await axios.post(apiUrl('autologin-request'), {
+			await axios.post(accountsUrl('public/cli/autologin-request'), {
 				client_hash: clientHash,
 				secret_hash: secretHash,
 				meta: {
@@ -48,11 +48,11 @@ export class Login extends BaseCommand {
 				}
 			});
 
-			const path = `/auth/autologin/${clientHash}`;
-			let url = isSazka() ? `https://sazka.nebe.app${path}` : `https://client.nebe.app${path}`;
+			const path = `/autologin/${clientHash}`;
+			let url = `https://accounts.ddco.app${path}`;
 
 			if (local) {
-				url = `http://localhost:8080${path}`
+				url = `http://localhost${path}`
 			}
 
 			await open(url);
@@ -62,10 +62,11 @@ export class Login extends BaseCommand {
 				title: 'Čekám na přihlášení...',
 				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await new Promise<void>((resolve) => {
 					let checks = 0;
+					let checkInterval: ReturnType<typeof setInterval>;
 
-					const checkInterval = setInterval(async () => {
+					checkInterval = setInterval(async () => {
 						if (local) {
-							console.log(`Check #${checks}`);
+							task.title = `Čekám na přihlášení... (${checks + 1}x)`;
 						}
 
 						if (checks > 60) { // 2 minutes, check every 2 seconds
@@ -75,17 +76,13 @@ export class Login extends BaseCommand {
 
 						checks++;
 
-						const { data } = await axios.post(apiUrl('autologin-check'), {
+						const { data } = await axios.post(accountsUrl('public/cli/autologin-check'), {
 							client_hash: clientHash,
 							secret_hash: secretHash,
 						});
 
 						if (data.user) {
-							setConfig('username', data.user.git_username);
-							setConfig('password', data.user.git_password);
-							setConfig('email', data.user.email);
-							setConfig('user_id', data.user.id);
-							setConfig('name', data.user.name);
+							this.setUser(data.user);
 
 							task.title = chalk.green(`Uživatel ${data.user.email} přihlášen`);
 
@@ -120,32 +117,49 @@ export class Login extends BaseCommand {
 				}
 			]);
 
-			console.log('Přihlašuji...');
+			const runner = new Listr([{
+				title: 'Přihlašuji...',
+				task: async (ctx: ListrContext, task: ListrTaskWrapper) => {
+					const { data } = await axios.post(
+						accountsUrl('public/cli/login'),
+						{
+							hostname: os.hostname(),
+							os: os.type(),
+							root: getRoot()
+						},
+						{
+							auth: {
+								username: answer1.email,
+								password: answer2.password
+							}
+						}
+					);
+
+
+					if (data.user) {
+						this.setUser(data.user);
+
+						task.title = chalk.green(`Uživatel ${data.user.email} přihlášen`);
+					} else {
+						throw new Error('Přihlášení se nezdařilo');
+					}
+				}
+			}])
 
 			try {
-				const response = await axios.post(apiUrl('login'), {
-					hostname: os.hostname(),
-					os: os.type(),
-					root: getRoot()
-				}, {
-					auth: {
-						username: answer1.email,
-						password: answer2.password
-					}
-				});
-
-				setConfig('username', response.data.user.git_username);
-				setConfig('password', response.data.user.git_password);
-				setConfig('email', response.data.user.email);
-				setConfig('user_id', response.data.user.id);
-				setConfig('name', response.data.user.name);
-
-				console.log(chalk.green(`Uživatel ${response.data.user.email} přihlášen`));
-
+				await runner.run();
 			} catch (error: any) {
 				Sentry.captureException(error);
 				console.error(chalk.red(JSON.stringify(error.response.data)));
 			}
 		}
+	}
+
+	setUser(user: any) {
+		setConfig('username', user.git_username);
+		setConfig('password', user.git_password);
+		setConfig('email', user.email);
+		setConfig('user_id', user.id);
+		setConfig('name', user.name);
 	}
 }
