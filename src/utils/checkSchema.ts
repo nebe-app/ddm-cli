@@ -3,6 +3,9 @@ import fs from 'fs-extra';
 import axios from 'axios';
 import * as Sentry from '@sentry/node';
 
+import devstackUrl from './devstackUrl';
+import { ValidatorEntry } from '../types/validation';
+
 export default async function checkSchema(schemaPath: string, state: any): Promise<boolean> {
 	if (!fs.existsSync(schemaPath)) {
 		console.error(chalk.red(`schema.json does not exist!`));
@@ -17,32 +20,38 @@ export default async function checkSchema(schemaPath: string, state: any): Promi
 	}
 
 	try {
-		// ToDo: replace with cloud devstack endpoint
-		const response = await axios.post('https://utilities.nebe.app/visual-processor/schema', schemaContents);
-		const data = response.data;
+		const { data } = await axios.post(devstackUrl('public/bundle-validator/schema'), {
+			schema: schemaContents,
+		});
 
 		state.schema = data;
 
-		const valid = data.valid;
-		const log = data.log;
+		const { isValid, log } = state.schema;
 
-		if (valid) {
-			console.log(chalk.green(`Schema seems ok`));
-			return true;
+		const errors = log.filter((entry: ValidatorEntry) => entry.level === 'error');
+		const warnings = log.filter((entry: ValidatorEntry) => entry.level === 'warning')
+
+		if (warnings.length > 0) {
+			console.log(chalk.yellow(`Upozornění při validaci schématu:`));
+
+			warnings.forEach((warning: ValidatorEntry) => {
+				console.log(chalk.yellow(warning.message));
+			});
 		}
 
-		console.error(chalk.red(`Chyby při validaci schématu:`));
+		if (errors.length > 0) {
+			console.log(chalk.red(`Chyby při validaci schématu:`));
 
-		log.forEach((error: any) => {
-			console.error(chalk.red(error.message));
-		});
+			errors.forEach((error: ValidatorEntry) => {
+				console.log(chalk.red(error.message));
+			});
+		}
 
-		return false;
-
+		return isValid;
 	} catch (error: any) {
 		Sentry.captureException(error);
-		console.error(chalk.red(`Chyba při validaci schématu`));
-		console.error(chalk.red(JSON.stringify(error.response.data)));
+		console.log(chalk.red(`Chyba při validaci schématu`));
+		console.error(error);
 
 		return false;
 	}
