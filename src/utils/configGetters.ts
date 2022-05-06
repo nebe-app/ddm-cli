@@ -1,4 +1,5 @@
 import config from './config';
+import { Token } from '../types/login';
 
 const isSazka = function (): boolean {
 	const [, , ...args] = process.argv;
@@ -32,6 +33,16 @@ const getConfig = function (name: string): any {
 	return isSazka() ? config.get(`${name}Sazka`) : config.get(name);
 }
 
+const getAccessToken = function (): string | null {
+	const token: Token | null = getConfig('token');
+
+	if (!token) {
+		return null;
+	}
+
+	return `${token.token_type} ${token.access_token}`;
+}
+
 const setConfig = function (key: string, value: any): void {
 	return isSazka() ? config.set(`${key}Sazka`, value) : config.set(key, value);
 }
@@ -44,4 +55,4 @@ const getCommand = function (command: string): string {
 	return isSazka() ? `ddm ${command} --sazka` : `ddm ${command}`;
 }
 
-export { isSazka, isLocal, getRoot, getLastDev, getUsername, getPassword, setConfig, getConfig, getBin, getCommand };
+export { isSazka, isLocal, getRoot, getLastDev, getUsername, getPassword, setConfig, getConfig, getAccessToken, getBin, getCommand };
