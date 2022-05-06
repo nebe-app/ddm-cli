@@ -146,14 +146,12 @@ export class Login extends BaseCommand {
 			await runner.run();
 		} catch (error: any) {
 			Sentry.captureException(error);
-			console.log(chalk.red(JSON.stringify(error.response.data)));
+			console.log(chalk.red(error.message));
 		}
 
 		if (server) {
 			await server.close();
 		}
-
-		process.exit(0);
 	}
 
 	setToken(token: Token): void {
