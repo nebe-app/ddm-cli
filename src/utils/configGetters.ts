@@ -55,4 +55,16 @@ const getCommand = function (command: string): string {
 	return isSazka() ? `ddm ${command} --sazka` : `ddm ${command}`;
 }
 
-export { isSazka, isLocal, getRoot, getLastDev, getUsername, getPassword, setConfig, getConfig, getAccessToken, getBin, getCommand };
+export {
+	isSazka,
+	isLocal,
+	getRoot,
+	getLastDev,
+	getUsername,
+	getPassword,
+	setConfig,
+	getConfig,
+	getAccessToken,
+	getBin,
+	getCommand
+};

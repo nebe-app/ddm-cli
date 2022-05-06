@@ -1,27 +1,24 @@
-import Bundler from 'parcel-bundler';
+import axios from 'axios';
 import fs from 'fs-extra';
 import glob from 'glob';
 import path from 'path';
 import chalk from 'chalk';
+import open from 'open';
 import inquirer from 'inquirer';
-import tcpPortUsed from 'tcp-port-used';
 import notifier from 'node-notifier';
-import express from 'express';
-import simpleGit from 'simple-git';
-import rimraf from 'rimraf';
 import Listr from 'listr';
+import chokidar from 'chokidar';
 import * as Sentry from '@sentry/node';
-
-import BaseCommand from '../BaseCommand';
-import getFill from '../utils/getFill';
-import checkConfig from '../utils/checkConfig';
-import checkSchema from '../utils/checkSchema';
-import selectVisual from '../utils/selectVisual';
-import { getRoot, getLastDev, getConfig, setConfig, isSazka } from '../utils/configGetters';
 import { Flags } from '@oclif/core';
-import ParcelBundler from 'parcel-bundler';
 
-export class Dev extends BaseCommand {
+import AuthenticatedCommand from '../AuthenticatedCommand';
+import selectVisual from '../utils/selectVisual';
+import { getRoot, getLastDev, getConfig, setConfig, getAccessToken } from '../utils/configGetters';
+import { Endpoint, Endpoints } from '../types/dev';
+import devstackUrl from '../utils/devstackUrl';
+import studioUrl from '../utils/studioUrl';
+
+export class Dev extends AuthenticatedCommand {
 	static description = 'Run development server to create visuals';
 
 	static flags = {
@@ -38,61 +35,61 @@ export class Dev extends BaseCommand {
 			default: false
 		}),
 		latest: Flags.boolean({
-			char: 'l',
+			char: 'a',
 			description: 'Start dev with latest edited visual',
 			required: false,
 			default: false
 		}),
 		local: Flags.boolean({
-			char: 'o',
+			char: 'l',
 			description: 'Start dev against local api',
 			hidden: true,
 			required: false,
 			default: false
 		}),
-	}
+	};
+
+	private endpoints: Endpoints = {
+		list: { url: `/filesystem/{bundleId}?path={path}`, method: 'get' },
+		show: { url: `/filesystem/{bundleId}/show?path={path}`, method: 'get' },
+		store: { url: `/filesystem/{bundleId}/store?path={path}`, method: 'post' },
+		upload: { url: `/filesystem/upload`, method: 'post' },
+		mkdir: { url: `/filesystem/{bundleId}/mkdir?path={value}`, method: 'post' },
+		mkresize: { url: `/filesystem/{bundleId}/mkresize`, method: 'post' },
+		mkfile: { url: `/filesystem/{bundleId}/mkfile?path={value}`, method: 'post' },
+		rename: { url: `/filesystem/{bundleId}/rename?name={value}`, method: 'post' },
+		move: { url: `/filesystem/{bundleId}/move?destPath={value}`, method: 'post' },
+		rollback: { url: `/git/{bundleId}/rollback?path={value}`, method: 'post' },
+		copy: { url: `/filesystem/{bundleId}/copy?srcPath={srcPath}&destPath={destPath}`, method: 'post' },
+		delete: { url: `/filesystem/{bundleId}`, method: 'delete' }
+	};
+
+	private watchedEvents: string[] = [
+		'add',
+		'addDir',
+		'unlink',
+		'unlinkDir',
+		'change',
+	];
+
+	private chokidarOptions: any = {
+		// ignore dotfiles
+		ignored: /(^|[/\\])\../,
+		// keep on running after initial "ready" event
+		persistent: true,
+		// don't fire add/addDir on init
+		ignoreInitial: true,
+	};
+
+	private timeoutTime: number = 100;
 
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Dev);
 		const { debug, newest, latest, local } = flags;
 
-		// Check port
-
-		const basePort = isSazka() ? 1300 : 1200;
-		const portsToCheck = [basePort, 1400];
-
-		for (let i in portsToCheck) {
-			if (!portsToCheck.hasOwnProperty(i)) {
-				continue;
-			}
-
-			const port: number = parseInt(i);
-
-			try {
-				const inUse = await tcpPortUsed.check(portsToCheck[port], '127.0.0.1');
-
-				if (inUse) {
-					console.error(chalk.red(`🛑 Port ${portsToCheck[port]} není dostupný, pravděpodobně již běží jiná instance NEBE dev stacku!`));
-					notifier.notify({
-						title: 'Nelze spustit devstack',
-						message: `🛑 Port ${portsToCheck[port]} není dostupný, pravděpodobně již běží jiná instance NEBE dev stacku!`,
-						sound: true,
-						icon: path.join(__dirname, '../assets/logo.png')
-					});
-					process.exit();
-				}
-			} catch (error: any) {
-				console.log(chalk.yellow(`Chyba při zjišťování, zda je port ${portsToCheck[port]} dostupný, pokračuji`));
-				console.log(error.message);
-			}
-		}
-
 		// Prepare folder
 
 		const root = getRoot();
-		const bundlerFolder = path.join(root);
-
-		await this.prepareFolder();
 
 		let visualPath: string | null = null;
 
@@ -110,65 +107,6 @@ export class Dev extends BaseCommand {
 
 		console.log(`Building ${visualPath}`);
 		setConfig('lastDev', visualPath);
-		fs.removeSync(path.join(bundlerFolder, 'dist'));
-
-		// Git
-
-		const git = simpleGit();
-		await git.cwd(`${root}/src/${visualPath}`);
-		const gitStatus = await git.status();
-
-		/*
-		State
-		 */
-		// ToDo: better typings
-		let state: any = {
-			gitStatus,
-			visualPath
-		};
-
-		/*
-		 * Server
-		 */
-		const app = express();
-
-		app.get('/state', (request, response) => {
-			response.set('Access-Control-Allow-Origin', '*');
-			response.send(state);
-		});
-
-		app.listen(1400);
-
-		/**
-		 * Config
-		 */
-		const configPath = `${root}/src/${visualPath}/config.json`;
-		const configResult = await checkConfig(configPath);
-
-		if (!configResult) {
-			process.exit(1);
-		}
-
-		const destConfigPath = `${bundlerFolder}/dist/${visualPath}/config.json`;
-		fs.copySync(configPath, destConfigPath);
-		state.config = fs.readJsonSync(configPath);
-
-		/**
-		 * Include folders
-		 */
-		const includes = glob.sync(`${root}/src/${visualPath}/include/`);
-		for (let i = 0; i < includes.length; i++) {
-			const path = includes[i];
-			const relativePath = path.toString().replace(`${root}/src/${visualPath}/`, '');
-			fs.copySync(path, `${bundlerFolder}/dist/${relativePath}`);
-		}
-
-		/**
-		 * Get fill
-		 */
-		const schemaPath = `${root}/src/${visualPath}/schema.json`;
-		await checkSchema(schemaPath, state);
-		let fill = getFill(schemaPath);
 
 		/**
 		 * VisualSizes
@@ -186,126 +124,97 @@ export class Dev extends BaseCommand {
 			process.exit();
 		}
 
-		console.log(`Serving ${folders.length} visual sizes`);
-
-		state.folders = folders;
-
-		// Fetch visual info
-
-		try {
-			state.visual = {};
-		} catch (error) {
-			console.error();
-		}
-
-		let bundlers: ParcelBundler[] = [];
-
-		rimraf.sync(bundlerFolder + '/.cache');
-		//await fs.promises.mkdir(bundlerFolder + '/.cache');
-
 		// Select resizes
+		// ToDo: allow running multiple bundlers
 		const folderChoices = {
-			type: 'checkbox',
-			name: 'folders',
-			message: 'Select resizes',
-			choices: folders.map((folder) => {
-				return {
-					name: folder.toString()
-						.replace(`${root}/src/${visualPath}/`, '')
-						.replace('/index.html', ''),
-					checked: true
-				};
+			type: 'list',
+			name: 'selectedFolder',
+			message: 'Select resize',
+			choices: folders.map((folder: string) => {
+				return folder.toString()
+					.replace(`${root}/src/${visualPath}/`, '')
+					.replace('/index.html', '');
 			})
 		};
+
 		const folderAnswers = await inquirer.prompt([folderChoices]);
-		const selectedFolders = folderAnswers.folders;
+		const { selectedFolder } = folderAnswers;
+		const [orgName, repoName] = visualPath.split('/');
 
-		if (selectedFolders.length === 0) {
-			console.error('🛑 Nevybrány žádné rozměry');
+		const repository = await this.getRepository(orgName, repoName);
+		const branches = await this.getBranches(orgName, repository.name);
+		// output category is on the 3rd position in repo name
+		const outputCategory = repository.name.split('-')[2];
 
-			notifier.notify({
-				title: 'Nelze spustit devstack',
-				message: `🛑 Nevybrány žádné rozměry`,
-				sound: true,
-				icon: path.join(__dirname, '../assets/logo.png')
-			});
-			process.exit();
+		let branch: string | null = null;
+
+		if (branches.length < 1) {
+			console.log(chalk.red('🤖 No branches found'));
+			process.exit(1);
 		}
 
-		console.log(`Running bundlers for resizes: ${selectedFolders}`);
-
-		state.bundlers = {};
-		const tasks = [];
-
-		for (let i in selectedFolders) {
-			if (!selectedFolders.hasOwnProperty(i)) {
-				continue;
-			}
-
-			const folder = selectedFolders[i];
-			const port = basePort + parseInt(i);
-
-			tasks.push({
-				title: `Serving ${folder} on http://localhost:${port}`,
-				task: async () => {
-					const {
-						results,
-						bundler
-					} = await this.startBundler(
-						root,
-						visualPath,
-						bundlerFolder,
-						folder,
-						port,
-						fill,
-						debug,
-						local
-					);
-
-					state.bundlers[i] = results;
-
-					if (bundler) {
-						bundlers.push(bundler);
-					}
-				}
-			})
+		if (branches.length === 1) {
+			branch = branches[0];
 		}
 
-		const runner = new Listr(tasks, { renderer: debug ? 'verbose' : 'default' });
+		if (!branch) {
+			const branchChoices = {
+				type: 'list',
+				name: 'selectedBranch',
+				message: 'Select branch',
+				choices: branches,
+			};
 
-		await runner.run();
+			const branchAnswer = await inquirer.prompt([branchChoices]);
 
-		console.log('Listening to file changes... Press Ctrl+C to stop servers');
-
-		if (fs.existsSync(schemaPath)) {
-			fs.watch(schemaPath, {}, async () => {
-				console.log('Schema changed, checking and rebundling...');
-
-				setTimeout(async () => {
-					await checkSchema(schemaPath, state);
-					fill = getFill(schemaPath);
-					bundlers.forEach(bundler => bundler.bundle());
-				}, 200);
-			});
+			branch = branchAnswer.selectedBranch;
 		}
 
-		fs.watch(configPath, {}, async () => {
-			console.log('Config changed, validating');
-			await checkConfig(configPath);
+		if (!branch) {
+			console.log(chalk.red('🤖 No branches selected'));
+			process.exit(1);
+		}
+
+		const bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
+
+		// replace bundleId in endpoints with actual bundle.id
+		Object.keys(this.endpoints).forEach((endpoint: string) => {
+			const endpointConfig: Endpoint = this.endpoints[endpoint];
+			endpointConfig.url = endpointConfig.url.replace('{bundleId}', bundle.id);
 		});
-	}
 
-	async prepareFolder() {
-		const root = getRoot();
-		const bundlerFolder = path.join(root);
+		// run preview
+		let resize: any = null;
+
+		const runner = new Listr([{
+			title: `Running bundler for resize ${selectedFolder}`,
+			task: async (ctx, task) => {
+				resize = await this.previewResize(orgName, bundle.id, selectedFolder);
+
+				if (!resize) {
+					throw new Error('Bundling resize unavailable');
+				}
+
+				const url = studioUrl(`visuals/local/${bundle.id}/${selectedFolder}`);
+
+				await open(url);
+
+				task.title = chalk.blue(`🌍 Otevírám prohlížeč s adresou: ${url}`);
+			}
+		}], {});
 
 		try {
-			await fs.promises.mkdir(bundlerFolder);
-		} catch (error) {
+			await runner.run();
+		} catch (error: any) {
+			Sentry.captureException(error);
+			console.log(chalk.red(error.message));
 		}
 
-		process.chdir(bundlerFolder);
-	};
+		const watcher = await this.startWatcher(`${root}/src/${visualPath}`);
+
+		console.log('🤖 Watching for changes... Press ctrl + c to stop bundler');
+
+	}
 
 	async getLastVisual() {
 		const root = getRoot();
@@ -316,6 +225,7 @@ export class Dev extends BaseCommand {
 		}
 
 		let visualExists = false;
+
 		try {
 			const stats = await fs.promises.lstat(path.join(root, 'src', lastDev));
 			visualExists = stats.isDirectory();
@@ -338,6 +248,7 @@ export class Dev extends BaseCommand {
 		}
 
 		let visualExists = false;
+
 		try {
 			const stats = await fs.promises.lstat(path.join(root, 'src', lastDev));
 			visualExists = stats.isDirectory();
@@ -349,10 +260,11 @@ export class Dev extends BaseCommand {
 		if (!visualExists) {
 			return null;
 		}
+
 		const lastVisualAnswers = await inquirer.prompt({
 			type: 'list',
 			name: 'first',
-			message: 'Use last visual? ' + lastVisualContent,
+			message: `Use last visual? ${lastVisualContent}`,
 			choices: [
 				'Ano',
 				'Ne'
@@ -362,152 +274,140 @@ export class Dev extends BaseCommand {
 		return lastVisualAnswers.first === 'Ano' ? lastVisualContent : null;
 	}
 
-	async startBundler(
-		root: string,
-		visualPath: string | null,
-		bundlerFolder: string,
-		folder: string,
-		port: number,
-		fill: any,
-		debug: boolean,
-		local: boolean
-	): Promise<any> {
-		const entryPoint = `${root}/src/${visualPath}/${folder}/index.html`;
-		const results: any = {
-			folder,
+	async getRepository(orgName: string, repoName: string): Promise<any> {
+		try {
+			const url: string = devstackUrl(`gitea/repos/${repoName}`);
+			const accessToken: string | null = getAccessToken();
+
+			if (!accessToken) {
+				return null;
+			}
+
+			const { data } = await axios.get(url, {
+				headers: {
+					Authorization: accessToken,
+					'X-Organization': orgName,
+				}
+			});
+
+			return data.repo;
+		} catch (error: any) {
+			console.log(chalk.red(error.message));
+
+			return null;
+		}
+	}
+
+	async getBranches(orgName: string, repoName: string): Promise<any> {
+		try {
+			const url: string = devstackUrl(`gitea/branches`);
+			const accessToken: string | null = getAccessToken();
+
+			if (!accessToken) {
+				return null;
+			}
+
+			const { data } = await axios.get(url, {
+				params: {
+					gitRepoName: repoName,
+				},
+				headers: {
+					Authorization: accessToken,
+					'X-Organization': orgName,
+				}
+			});
+
+			return data.branches;
+		} catch (error: any) {
+			console.log(chalk.red(error.message));
+
+			return null;
+		}
+	}
+
+	async startBundle(branch: string, orgName: string, repoName: string, outputCategory: string): Promise<any> {
+		try {
+			const accessToken: string | null = getAccessToken();
+
+			if (!accessToken) {
+				return null;
+			}
+
+			const query = {
+				branch: branch,
+				gitOrgName: orgName,
+				gitRepoName: repoName,
+				outputCategory: outputCategory,
+			};
+
+			const { data } = await axios.post(devstackUrl(`bundles`), query, {
+				headers: {
+					Authorization: accessToken,
+					'X-Organization': orgName,
+				}
+			});
+
+			return data;
+		} catch (error: any) {
+			console.error(chalk.red(error.message));
+
+			return null;
+		}
+	}
+
+	async previewResize(orgName: string, bundleId: number, label: string): Promise<any> {
+		try {
+			const accessToken: string | null = getAccessToken();
+
+			if (!accessToken) {
+				return null;
+			}
+
+			const query = {
+				bundleId,
+				label,
+			};
+
+			const { data } = await axios.post(devstackUrl(`resizes`), query, {
+				headers: {
+					Authorization: accessToken,
+					'X-Organization': orgName,
+				}
+			});
+
+			return data;
+		} catch (error: any) {
+			console.error(chalk.red(error.message));
+
+			return null;
+		}
+	}
+
+	async startWatcher(visualPath: string): Promise<any> {
+		let watcher: any = {
+			handler: null,
+			timeout: null,
 		};
 
-		try {
-			const options = {
-				outDir: `${bundlerFolder}/dist/${folder}`,
-				outFile: 'index.html',
-				publicUrl: '/',
-				watch: true,
-				cache: false,
-				//cacheDir: bundlerFolder + '/.cache/' + i,
-				minify: true,
-				logLevel: 2,
-				autoInstall: true,
+		// init file watcher
+		watcher.handler = chokidar.watch(`${visualPath}`, this.chokidarOptions);
 
-				contentHash: false,
-				global: 'VISUAL',
-				scopeHoist: false,
-				target: 'browser',
-				bundleNodeModules: false,
-				hmr: true,
-				sourceMaps: true,
-				detailedReport: true
-			};
-			// @ts-ignore
-			const bundler = new Bundler(entryPoint, options);
-
-			bundler.on('buildStart', (entryPoints) => {
-				if (debug) {
-					console.log(`${folder} buildStart ${JSON.stringify(entryPoints)}`);
+		this.watchedEvents.forEach((event: string) => {
+			watcher.handler.on(event, async (filepath: string) => {
+				if (watcher.timeout) {
+					return;
 				}
+
+				// delay watcher, so we don’t capture superfluous file change events within a given window of time
+				watcher.timeout = setTimeout(() => {
+					clearTimeout(watcher.timeout);
+					watcher.timeout = null;
+				}, this.timeoutTime);
+
+				console.log(filepath);
 			});
+		});
 
-			bundler.on('buildError', (error) => {
-				console.log(`${folder} buildError`);
-				console.error(error);
-			});
-
-			bundler.on('buildEnd', () => {
-				if (debug) {
-					console.log(`${folder} buildEnd`);
-				}
-			});
-
-			bundler.on('bundled', (bundle) => {
-				if (debug) {
-					//console.log(bundle.childBundles);
-				}
-
-				const visualClientScript = local
-					? `<script src="http://localhost:1236/visual-client.min.js?cb=${new Date().getTime()}"></script>`
-					: `<script src="https://cdn.nebe.app/store/serving/dist/visual-client.min.js?cb=${new Date().getTime()}"></script>`;
-
-				if (debug) {
-					console.log(`Using VisualClient on URL ${visualClientScript}`);
-				}
-
-				let markupContents: string = fs.readFileSync(`${options.outDir}/index.html`).toString();
-
-				if (markupContents.indexOf('<!--NEBE_POLYFILLS-->') === -1) {
-					debug ? console.log('Adding NEBE_POLYFILLS to markup') : true;
-					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_POLYFILLS--><script src="https://cdnjs.cloudflare.com/ajax/libs/promise-polyfill/8.1.3/polyfill.min.js"></script><script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.7/runtime.min.js"></script><!--/NEBE_POLYFILLS-->\n</head>`);
-				} else {
-					debug ? console.log('NEBE_POLYFILLS already in markup') : true;
-				}
-
-				if (markupContents.indexOf('<!--NEBE_DEMO_FILL-->') === -1) {
-					debug ? console.log('Adding NEBE_DEMO_FILL to markup') : true;
-					markupContents = markupContents.replace(`</body>`, `\n<!--NEBE_DEMO_FILL-->\n${fill}\n<!--/NEBE_DEMO_FILL-->\n</body>`);
-				} else {
-					debug ? console.log('NEBE_DEMO_FILL already in markup') : true;
-				}
-
-				if (markupContents.indexOf('<!--NEBE_VISUAL_CLIENT-->') === -1) {
-					debug ? console.log('Adding NEBE_VISUAL_CLIENT to markup') : true;
-					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_CLIENT-->\n${visualClientScript}\n<!--/NEBE_VISUAL_CLIENT-->\n</head>`);
-				} else {
-					debug ? console.log('NEBE_VISUAL_CLIENT already in markup') : true;
-				}
-
-				if (markupContents.indexOf('<!--NEBE_ENV-->') === -1) {
-					debug ? console.log('Adding NEBE_ENV to markup') : true;
-					// ToDo: investigate why this is not working
-					// @ts-ignore
-					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_ENV-->\n<script>window.MODE = 'dev'; window.FOLDER = '${folder}';</script>\n<!--/NEBE_ENV-->\n</head>`);
-				} else {
-					debug ? console.log('NEBE_ENV already in markup') : true;
-				}
-
-				if (markupContents.indexOf('<!--NEBE_DOCUMENT_TITLE-->') === -1) {
-					debug ? console.log('Adding NEBE_DOCUMENT_TITLE to markup') : true;
-					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_DOCUMENT_TITLE-->\n<script>document.title = "${folder} ${visualPath}";</script>\n<!--/NEBE_DOCUMENT_TITLE-->\n</head>`);
-				} else {
-					debug ? console.log('NEBE_DOCUMENT_TITLE already in markup') : true;
-				}
-
-				// Helper
-
-				const visualHelperUrl = local ? 'http://localhost:1235/' : 'https://cdn.nebe.app/store/utils/dist/';
-
-				if (debug) {
-					console.log(`Using VisualHelper on URL ${visualHelperUrl}`);
-				}
-
-				if (markupContents.indexOf('<!--NEBE_VISUAL_HELPER-->') === -1) {
-					debug ? console.log('Adding NEBE_VISUAL_HELPER to markup') : true;
-					markupContents = markupContents.replace(`</head>`, `\n<!--NEBE_VISUAL_HELPER-->\n<link rel="stylesheet" href="${visualHelperUrl}visual-helper.min.css" type="text/css">\n<script src="${visualHelperUrl}visual-helper.min.js"></script>\n<!--/NEBE_VISUAL_HELPER-->\n</head>`);
-				} else {
-					debug ? console.log('NEBE_VISUAL_HELPER already in markup') : true;
-				}
-
-				// Write it
-
-				fs.writeFileSync(`${options.outDir}/index.html`, markupContents);
-
-				if (markupContents.indexOf('<main>') === -1 && markupContents.indexOf('<main ') === -1) {
-					console.error(chalk.red(`Resize ${folder} does not contain element <main>!`));
-				}
-			});
-
-			await bundler.serve(port);
-
-			results.error = false;
-			results.port = port;
-
-			return { results, bundler };
-		} catch (error) {
-			Sentry.captureException(error);
-			console.error(`Error ${folder}`);
-
-			console.error(error);
-			results.error = false;
-		}
-
-		return { results, bundler: null };
+		return watcher;
 	}
 }
