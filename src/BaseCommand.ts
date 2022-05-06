@@ -4,7 +4,7 @@ import { Command } from '@oclif/core';
 export default abstract class BaseCommand extends Command {
 	async init(): Promise<void> {
 		Sentry.init({
-			dsn: 'https://ac078c61624944c8a56ce290ffdb5dd8@o170788.ingest.sentry.io/5432248',
+			dsn: 'https://02902c9ddb584992a780788c71ba5cd7@o562268.ingest.sentry.io/6384635',
 			release: `ddm-cli@${this.config.pjson.version}`,
 			// @ts-ignore
 			tags: { version: this.config.pjson.version },
