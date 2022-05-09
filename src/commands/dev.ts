@@ -4,7 +4,6 @@ import path from 'path';
 import chalk from 'chalk';
 import open from 'open';
 import inquirer from 'inquirer';
-import notifier from 'node-notifier';
 import FormData from 'form-data';
 import Listr from 'listr';
 import chokidar from 'chokidar';
@@ -13,10 +12,10 @@ import { Flags } from '@oclif/core';
 
 import AuthenticatedCommand from '../AuthenticatedCommand';
 import selectVisual from '../utils/selectVisual';
-import { getRoot, getLastDev, getConfig, setConfig, getAccessToken } from '../utils/configGetters';
-import { Endpoint, Endpoints } from '../types/dev';
 import devstackUrl from '../utils/devstackUrl';
 import studioUrl from '../utils/studioUrl';
+import { getRoot, getLastDev, getConfig, setConfig } from '../utils/configGetters';
+import { Endpoint, Endpoints } from '../types/dev';
 
 export class Dev extends AuthenticatedCommand {
 	static description = 'Run development server to create visuals';
@@ -109,13 +108,7 @@ export class Dev extends AuthenticatedCommand {
 
 		if (folders.length === 0) {
 			console.error('🛑 Kreativa neobsahuje žádné rozměry! Začněte zkopírováním existující kreativy, pokud existují, nebo si stáhněte šablonu z https://github.com/nebe-app');
-			notifier.notify({
-				title: 'Nelze spustit devstack',
-				message: `🛑 Kreativa neobsahuje žádné rozměry! Začněte zkopírováním existující kreativy nebo si stáhněte šablonu`,
-				sound: true,
-				icon: path.join(__dirname, '../assets/logo.png')
-			});
-			process.exit();
+			process.exit(1);
 		}
 
 		this.visualRoot = `${root}/src/${visualPath}`;

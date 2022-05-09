@@ -37,7 +37,6 @@
 		"glob": "^8.0.1",
 		"inquirer": "^8.2.2",
 		"listr": "^0.14.3",
-		"node-notifier": "^10.0.1",
 		"open": "^8.4.0",
 		"parcel-bundler": "^1.9.4",
 		"path": "^0.12.7",
