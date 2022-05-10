@@ -4,6 +4,7 @@ import path from 'path';
 import chalk from 'chalk';
 import open from 'open';
 import inquirer from 'inquirer';
+import simpleGit from 'simple-git';
 import FormData from 'form-data';
 import Listr from 'listr';
 import chokidar from 'chokidar';
@@ -111,7 +112,25 @@ export class Dev extends AuthenticatedCommand {
 		console.log(`Building ${visualPath}`);
 		setConfig('lastDev', visualPath);
 
-		// ToDo: attempt git fetch/pull
+		this.visualRoot = `${root}/src/${visualPath}`;
+
+		const git = simpleGit();
+		git.cwd(this.visualRoot);
+
+		try {
+			await git.fetch();
+			await git.pull(['--rebase']);
+		} catch (error: any) {
+			Sentry.captureException(error);
+
+			if (this.isDebugging) {
+				this.reportError(error);
+			}
+
+			console.log(chalk.red('Git pull failed, please pull manually'));
+
+			process.exit(1);
+		}
 
 		/**
 		 * VisualSizes
@@ -122,8 +141,6 @@ export class Dev extends AuthenticatedCommand {
 			console.error('🛑 Kreativa neobsahuje žádné rozměry! Začněte zkopírováním existující kreativy, pokud existují, nebo si stáhněte šablonu z https://github.com/nebe-app');
 			process.exit(1);
 		}
-
-		this.visualRoot = `${root}/src/${visualPath}`;
 
 		// Select resizes
 		// ToDo: allow running multiple bundlers
@@ -147,37 +164,63 @@ export class Dev extends AuthenticatedCommand {
 		// output category is on the 3rd position in repo name
 		const outputCategory = repository.name.split('-')[2];
 
-		// ToDo: check whether bundler is running before prompting branch select
-		let branch: string | null = null;
+		// let's attempt to find a running bundle in studio, if it exists, resume session
+		// in cli
+		this.bundle = await this.findRunningBundle(orgName, repository.name, outputCategory);
 
-		if (branches.length < 1) {
-			console.log(chalk.red('🤖 No branches found'));
-			process.exit(1);
-		}
-
-		if (branches.length === 1) {
-			branch = branches[0].value;
-		}
-
-		if (!branch) {
-			const branchChoices = {
+		// if bundle is not found, we need to create a new edit session
+		if (this.bundle) {
+			const resumingBundleChoice = await inquirer.prompt({
 				type: 'list',
-				name: 'selectedBranch',
-				message: 'Select branch',
-				choices: branches,
-			};
+				name: 'answer',
+				message: `Kreativu máte rozpracovanou v studiu. Pokud spustíte lokálni build, tak se úpravy v studiu přepíšou lokálními soubory. Chcete pokračovat?`,
+				choices: [
+					'Ano',
+					'Ne'
+				]
+			});
 
-			const branchAnswer = await inquirer.prompt([branchChoices]);
+			if (resumingBundleChoice.answer === 'Ne') {
+				console.log(chalk.blue(`🌍 S úpravou v studiu můžete pokračovat zde: ${studioUrl(`/visuals/${orgName}/${repository.name}`)}`));
+				process.exit();
+			}
+		} else {
+			let branch: string | null = null;
 
-			branch = branchAnswer.selectedBranch;
+			if (branches.length < 1) {
+				console.log(chalk.red('🤖 No branches found'));
+				process.exit(1);
+			}
+
+			if (branches.length === 1) {
+				branch = branches[0].value;
+			}
+
+			if (!branch) {
+				const branchChoices = {
+					type: 'list',
+					name: 'selectedBranch',
+					message: 'Select branch',
+					choices: branches,
+				};
+
+				const branchAnswer = await inquirer.prompt([branchChoices]);
+
+				branch = branchAnswer.selectedBranch;
+			}
+
+			if (!branch) {
+				console.log(chalk.red('🤖 No branches selected'));
+				process.exit(1);
+			}
+
+			this.bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
 		}
 
-		if (!branch) {
-			console.log(chalk.red('🤖 No branches selected'));
+		if (!this.bundle) {
+			console.log(chalk.red('🤖 Could not start bundle'));
 			process.exit(1);
 		}
-
-		this.bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
 
 		// replace bundleId in endpoints with actual bundle.id
 		Object.keys(this.endpoints).forEach((endpoint: string) => {
@@ -207,7 +250,7 @@ export class Dev extends AuthenticatedCommand {
 
 		await this.runTasks(tasks);
 
-		const watcher = await this.startWatcher();
+		await this.startWatcher();
 
 		console.log(chalk.blue('🤖 Watching for changes... Press ctrl + c to stop bundler'));
 	}
@@ -238,9 +281,9 @@ export class Dev extends AuthenticatedCommand {
 					};
 
 					await this.performRequest(config);
-
-					task.title = chalk.green(`Stopped`);
 				}
+
+				task.title = chalk.green(`Stopped`);
 			}
 		}]);
 
@@ -323,10 +366,8 @@ export class Dev extends AuthenticatedCommand {
 		} catch (error: any) {
 			Sentry.captureException(error);
 
-			if (error.response && error.response.data) {
-				console.error(error.response.data);
-			} else {
-				console.error(error);
+			if (this.isDebugging) {
+				this.reportError(error);
 			}
 
 			return null;
@@ -352,21 +393,46 @@ export class Dev extends AuthenticatedCommand {
 		} catch (error: any) {
 			Sentry.captureException(error);
 
-			if (error.response && error.response.data) {
-				console.error(error.response.data);
-			} else {
-				console.error(error);
+			if (this.isDebugging) {
+				this.reportError(error);
 			}
 
 			return null;
 		}
 	}
 
+	async findRunningBundle(orgName: string, repoName: string, outputCategory: string): Promise<any> {
+		try {
+			const config = {
+				url: devstackUrl(`/bundles/running`),
+				method: 'GET',
+				params: {
+					gitOrgName: orgName,
+					gitRepoName: repoName,
+					outputCategory: outputCategory,
+				},
+				headers: {
+					'X-Organization': orgName,
+				},
+			};
+
+			const { data } = await this.performRequest(config);
+
+			return data.bundle;
+		} catch (error: any) {
+			Sentry.captureException(error);
+
+			if (this.isDebugging) {
+				this.reportError(error);
+			}
+		}
+	}
+
 	async startBundle(branch: string, orgName: string, repoName: string, outputCategory: string): Promise<any> {
 		try {
 			const config = {
-				url: devstackUrl(`bundles`),
-				method: 'post',
+				url: devstackUrl(`/bundles`),
+				method: 'POST',
 				data: {
 					branch: branch,
 					gitOrgName: orgName,
@@ -384,10 +450,8 @@ export class Dev extends AuthenticatedCommand {
 		} catch (error: any) {
 			Sentry.captureException(error);
 
-			if (error.response && error.response.data) {
-				console.error(error.response.data);
-			} else {
-				console.error(error);
+			if (this.isDebugging) {
+				this.reportError(error);
 			}
 
 			return null;
@@ -414,11 +478,10 @@ export class Dev extends AuthenticatedCommand {
 		} catch (error: any) {
 			Sentry.captureException(error);
 
-			if (error.response && error.response.data) {
-				console.error(error.response.data);
-			} else {
-				console.error(error);
+			if (this.isDebugging) {
+				this.reportError(error);
 			}
+
 			return null;
 		}
 	}
@@ -588,11 +651,7 @@ export class Dev extends AuthenticatedCommand {
 			Sentry.captureException(error);
 
 			if (this.isDebugging) {
-				if (error.response && error.response.data) {
-					console.error(error.response.data);
-				} else {
-					console.error(error);
-				}
+				this.reportError(error);
 			}
 		}
 	}

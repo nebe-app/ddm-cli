@@ -36,6 +36,14 @@ export default abstract class BaseCommand extends Command {
 
 	// region Helpers
 
+	reportError(error: any) {
+		if (error.response && error.response.data) {
+			console.error(error.response.data);
+		} else {
+			console.error(error);
+		}
+	}
+
 	getCancelToken(name: string): CancelToken {
 		if (this.cancelTokens[name]) {
 			this.cancelTokens[name].cancel();
