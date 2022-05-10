@@ -74,11 +74,21 @@ export class Dev extends AuthenticatedCommand {
 
 	private isDebugging: boolean = false;
 
+	private bundle: any = null;
+
+	private resize: any = null;
+
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Dev);
 		const { debug, newest, latest } = flags;
 
 		this.isDebugging = debug;
+
+		process.on('exit', this.exitHandler.bind(this));
+		process.on('SIGINT', this.exitHandler.bind(this));
+		process.on('SIGUSR1', this.exitHandler.bind(this));
+		process.on('SIGUSR2', this.exitHandler.bind(this));
+		process.on('SIGTERM', this.exitHandler.bind(this));
 
 		// Prepare folder
 
@@ -100,6 +110,8 @@ export class Dev extends AuthenticatedCommand {
 
 		console.log(`Building ${visualPath}`);
 		setConfig('lastDev', visualPath);
+
+		// ToDo: attempt git fetch/pull
 
 		/**
 		 * VisualSizes
@@ -165,27 +177,27 @@ export class Dev extends AuthenticatedCommand {
 			process.exit(1);
 		}
 
-		const bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
+		this.bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
 
 		// replace bundleId in endpoints with actual bundle.id
 		Object.keys(this.endpoints).forEach((endpoint: string) => {
 			const endpointConfig: Endpoint = this.endpoints[endpoint];
-			endpointConfig.url = devstackUrl(endpointConfig.url.replace('{bundleId}', bundle.id));
+			endpointConfig.url = devstackUrl(endpointConfig.url.replace('{bundleId}', this.bundle.id));
 		});
 
-		// run preview
-		let resize: any = null;
+		// ToDo: sync local files with devstack
 
+		// run preview
 		const tasks = new Listr([{
 			title: `Running bundler for resize ${selectedFolder}`,
 			task: async (ctx, task) => {
-				resize = await this.previewResize(orgName, bundle.id, selectedFolder);
+				this.resize = await this.previewResize(orgName, this.bundle.id, selectedFolder);
 
-				if (!resize) {
+				if (!this.resize) {
 					throw new Error('Bundling resize unavailable');
 				}
 
-				const url = studioUrl(`visuals/local/${bundle.id}/${selectedFolder}`);
+				const url = studioUrl(`visuals/local/${this.bundle.id}/${selectedFolder}`);
 
 				await open(url);
 
@@ -195,10 +207,46 @@ export class Dev extends AuthenticatedCommand {
 
 		await this.runTasks(tasks);
 
-		const watcher = await this.startWatcher(bundle);
+		const watcher = await this.startWatcher();
 
 		console.log(chalk.blue('🤖 Watching for changes... Press ctrl + c to stop bundler'));
+	}
 
+	async exitHandler(): Promise<void> {
+		const tasks = new Listr([{
+			title: chalk.blue('Stopping bundler...'),
+			task: async (ctx, task): Promise<void> => {
+				if (this.resize) {
+					const config = {
+						url: devstackUrl(`/resizes/${this.resize.id}`),
+						method: 'DELETE',
+						cancelToken: this.getCancelToken('resizeDestroy'),
+					};
+
+					await this.performRequest(config);
+				}
+
+				if (this.bundle) {
+					const config = {
+						url: devstackUrl(`/bundles/${this.bundle.id}`),
+						method: 'DELETE',
+						data: {
+							saveChanges: false,
+							commitMessage: 'CLI stopped',
+							targetBranch: this.bundle.branch,
+						}
+					};
+
+					await this.performRequest(config);
+
+					task.title = chalk.green(`Stopped`);
+				}
+			}
+		}]);
+
+		await this.runTasks(tasks);
+
+		process.exit(0);
 	}
 
 	async getLastVisual() {
@@ -375,7 +423,7 @@ export class Dev extends AuthenticatedCommand {
 		}
 	}
 
-	async startWatcher(bundle: any): Promise<any> {
+	async startWatcher(): Promise<any> {
 		if (!this.visualRoot) {
 			console.log(chalk.red('🛑 Visual root not set! Cannot start watcher.'));
 			process.exit(1);
@@ -385,7 +433,7 @@ export class Dev extends AuthenticatedCommand {
 		const watcher = chokidar.watch(`${this.visualRoot}`, this.chokidarOptions);
 
 		// bind event listeners + set context of functions to current class
-		watcher.on('add', (filepath: string) => this.onAdd(filepath, bundle));
+		watcher.on('add', this.onAdd.bind(this));
 		watcher.on('unlink', this.onUnlink.bind(this));
 		watcher.on('change', this.onChange.bind(this));
 		watcher.on('addDir', this.onAddDir.bind(this));
@@ -427,7 +475,7 @@ export class Dev extends AuthenticatedCommand {
 		await this.runTasks(tasks);
 	}
 
-	async onAdd(filepath: string, bundle: any): Promise<void> {
+	async onAdd(filepath: string): Promise<void> {
 		const relativePath = this.getRelativePath(filepath);
 		const tasks = new Listr([{
 			title: chalk.blue(`Storing file "${relativePath}"...`),
@@ -436,7 +484,7 @@ export class Dev extends AuthenticatedCommand {
 					const filename = path.basename(filepath);
 					const formData = new FormData();
 
-					formData.append('bundleId', bundle.id);
+					formData.append('bundleId', this.bundle.id);
 					formData.append('path', relativePath.replace(`/${filename}`, '') || '/');
 					formData.append('files[]', fs.createReadStream(filepath), filename);
 
@@ -518,7 +566,7 @@ export class Dev extends AuthenticatedCommand {
 				} catch (error: any) {
 					// in case of deleting a directory and all it's content multiple unlink are fired
 					// and are not ordered properly, let's assume everything has been deleted since
-					// rimraf is fired on backend
+					// rimraf is fired on b	ackend
 					if (error.response && error.response.data && error.response.data.code === 404) {
 						task.title = chalk.green(`Deleted "${relativePath}"`);
 
