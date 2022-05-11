@@ -78,6 +78,8 @@ export class Dev extends AuthenticatedCommand {
 
 	private localZipPath: string | null = null;
 
+	private shouldDestroyBundle: boolean = false;
+
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Dev);
 		const { debug, newest, latest, local } = flags;
@@ -138,7 +140,7 @@ export class Dev extends AuthenticatedCommand {
 		const folders = glob.sync(`${root}/src/${visualPath}/[!_][0-9]*/index.html`);
 
 		if (folders.length === 0) {
-			console.error('🛑 Kreativa neobsahuje žádné rozměry! Začněte zkopírováním existující kreativy, pokud existují, nebo si stáhněte šablonu z https://github.com/nebe-app');
+			console.log(chalk.red('🛑 No resize in visual! Start by copying the contents of an existing visual if it exists or copy a template from https://github.com/nebe-app'))
 			return await this.exitHandler(1);
 		}
 
@@ -169,18 +171,20 @@ export class Dev extends AuthenticatedCommand {
 
 		// if bundle is not found, we need to create a new edit session
 		if (this.bundle) {
+			console.log(chalk.yellow.bold('Visual is already being edited in studio. If you start a local build, all unsaved changes from studio will be overwritten by local files'));
+
 			const resumingBundleChoice = await inquirer.prompt({
 				type: 'list',
 				name: 'answer',
-				message: `Kreativu máte rozpracovanou v studiu. Pokud spustíte lokálni build, tak se úpravy v studiu přepíšou lokálními soubory. Chcete pokračovat?`,
+				message: chalk.yellow('Do you wish to continue?'),
 				choices: [
-					'Ano',
-					'Ne'
+					'Yes',
+					'No'
 				]
 			});
 
-			if (resumingBundleChoice.answer === 'Ne') {
-				console.log(chalk.blue(`🌍 S úpravou v studiu můžete pokračovat zde: ${studioUrl(`/visuals/${orgName}/${repository.name}`)}`));
+			if (resumingBundleChoice.answer === 'No') {
+				console.log(chalk.blue(`You can continue editing your visual in studio here ${studioUrl(`/visuals/${orgName}/${repository.name}`)}`));
 				return await this.exitHandler();
 			}
 		} else {
@@ -218,6 +222,8 @@ export class Dev extends AuthenticatedCommand {
 			this.bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
 		}
 
+		this.shouldDestroyBundle = true;
+
 		if (!this.bundle) {
 			console.log(chalk.red('🤖 Could not start bundle'));
 			return await this.exitHandler(1);
@@ -241,7 +247,7 @@ export class Dev extends AuthenticatedCommand {
 
 		// run preview
 		const tasks = new Listr([{
-			title: `Running bundler for resize ${selectedFolder}`,
+			title: chalk.blue(`Running bundler for resize ${selectedFolder}...`),
 			task: async (ctx, task) => {
 				this.resize = await this.previewResize(orgName, this.bundle.id, selectedFolder);
 
@@ -253,9 +259,9 @@ export class Dev extends AuthenticatedCommand {
 
 				await open(url);
 
-				task.title = chalk.green(`🌍 Preview bundle: ${url}`);
+				task.title = chalk.green(`Started bundle ${url}`);
 			}
-		}], {});
+		}]);
 
 		await this.runTasks(tasks);
 
@@ -268,28 +274,30 @@ export class Dev extends AuthenticatedCommand {
 		const tasks = new Listr([{
 			title: chalk.blue('Stopping bundler...'),
 			task: async (ctx, task): Promise<void> => {
-				if (this.resize) {
-					const config = {
-						url: devstackUrl(`/resizes/${this.resize.id}`),
-						method: 'DELETE',
-						cancelToken: this.getCancelToken('resizeDestroy'),
-					};
+				if (this.shouldDestroyBundle) {
+					if (this.resize) {
+						const config = {
+							url: devstackUrl(`/resizes/${this.resize.id}`),
+							method: 'DELETE',
+							cancelToken: this.getCancelToken('resizeDestroy'),
+						};
 
-					await this.performRequest(config);
-				}
+						await this.performRequest(config);
+					}
 
-				if (this.bundle) {
-					const config = {
-						url: devstackUrl(`/bundles/${this.bundle.id}`),
-						method: 'DELETE',
-						data: {
-							saveChanges: false,
-							commitMessage: 'CLI stopped',
-							targetBranch: this.bundle.branch,
-						}
-					};
+					if (this.bundle) {
+						const config = {
+							url: devstackUrl(`/bundles/${this.bundle.id}`),
+							method: 'DELETE',
+							data: {
+								saveChanges: false,
+								commitMessage: 'CLI stopped',
+								targetBranch: this.bundle.branch,
+							}
+						};
 
-					await this.performRequest(config);
+						await this.performRequest(config);
+					}
 				}
 
 				if (this.localZipPath && fs.existsSync(this.localZipPath)) {
