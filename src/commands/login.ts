@@ -84,22 +84,22 @@ export class Login extends BaseCommand {
 		const url: string = accountsUrl(endpoint, false);
 
 		await open(url);
-		console.log(chalk.green(`Otevírám prohlížeč s adresou: ${url}`));
+		console.log(chalk.green(`Opening browser ${url}`));
 
 		const runner = new Listr([
 			{
-				title: 'Čekám na přihlášení...',
+				title: 'Awaiting login in browser...',
 				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await new Promise<void>((resolve, reject) => {
 					let checks = 0;
 
 					const checkInterval: ReturnType<typeof setInterval> = setInterval(async () => {
 						if (local) {
-							task.title = `Čekám na přihlášení... (${checks + 1}x)`;
+							task.title = `Awaiting login in browser... (${checks + 1}x)`;
 						}
 
 						if (checks > 60) { // 2 minutes, check every 2 seconds
 							clearInterval(checkInterval);
-							throw new Error(`Přihlášení vypršelo, zkuste to znova`);
+							throw new Error(`Login timed out, please try again`);
 						}
 
 						checks++;
@@ -111,7 +111,7 @@ export class Login extends BaseCommand {
 
 							if (!accessToken) {
 								clearInterval(checkInterval);
-								throw new Error(`Přihlášení se nezdařilo, zkuste to znova`);
+								throw new Error(`Something went wrong while trying to log you in, please try again later`);
 							}
 
 							try {
@@ -123,7 +123,7 @@ export class Login extends BaseCommand {
 
 								this.setUser(user);
 
-								task.title = chalk.green(`Uživatel ${user.email} přihlášen`);
+								task.title = chalk.green(`User ${user.email} successfully logged in`);
 
 								clearInterval(checkInterval);
 								resolve();
