@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import open from 'open';
 import inquirer from 'inquirer';
 import simpleGit from 'simple-git';
+import AdmZip from 'adm-zip';
 import FormData from 'form-data';
 import Listr from 'listr';
 import chokidar from 'chokidar';
@@ -22,12 +23,8 @@ export class Dev extends AuthenticatedCommand {
 	static description = 'Run development server to create visuals';
 
 	static flags = {
-		debug: Flags.boolean({
-			char: 'd',
-			description: 'Debug mode',
-			required: false,
-			default: false
-		}),
+		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
+		local: Flags.boolean({ char: 'l', description: 'Against local apis', required: false, default: false }),
 		newest: Flags.boolean({
 			char: 'n',
 			description: 'Start dev with newly created visual',
@@ -67,7 +64,7 @@ export class Dev extends AuthenticatedCommand {
 		// don't fire add/addDir unless file write is finished
 		awaitWriteFinish: {
 			// after last write, wait for 1s to compare outcome with source to ensure add/change are properly fired
-			stabilityThreshold: 1000,
+			stabilityThreshold: 300,
 		},
 	};
 
@@ -79,11 +76,15 @@ export class Dev extends AuthenticatedCommand {
 
 	private resize: any = null;
 
+	private localZipPath: string | null = null;
+
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Dev);
-		const { debug, newest, latest } = flags;
+		const { debug, newest, latest, local } = flags;
 
 		this.isDebugging = debug;
+
+		// Bind exit handler
 
 		process.on('exit', this.exitHandler.bind(this));
 		process.on('SIGINT', this.exitHandler.bind(this));
@@ -128,8 +129,7 @@ export class Dev extends AuthenticatedCommand {
 			}
 
 			console.log(chalk.red('Git pull failed, please pull manually'));
-
-			process.exit(1);
+			return await this.exitHandler(1);
 		}
 
 		/**
@@ -139,7 +139,7 @@ export class Dev extends AuthenticatedCommand {
 
 		if (folders.length === 0) {
 			console.error('🛑 Kreativa neobsahuje žádné rozměry! Začněte zkopírováním existující kreativy, pokud existují, nebo si stáhněte šablonu z https://github.com/nebe-app');
-			process.exit(1);
+			return await this.exitHandler(1);
 		}
 
 		// Select resizes
@@ -160,7 +160,6 @@ export class Dev extends AuthenticatedCommand {
 		const [orgName, repoName] = visualPath.split('/');
 
 		const repository = await this.getRepository(orgName, repoName);
-		const branches = await this.getBranches(orgName, repository.name);
 		// output category is on the 3rd position in repo name
 		const outputCategory = repository.name.split('-')[2];
 
@@ -182,14 +181,16 @@ export class Dev extends AuthenticatedCommand {
 
 			if (resumingBundleChoice.answer === 'Ne') {
 				console.log(chalk.blue(`🌍 S úpravou v studiu můžete pokračovat zde: ${studioUrl(`/visuals/${orgName}/${repository.name}`)}`));
-				process.exit();
+				return await this.exitHandler();
 			}
 		} else {
+			const branches = await this.getBranches(orgName, repository.name);
+
 			let branch: string | null = null;
 
 			if (branches.length < 1) {
 				console.log(chalk.red('🤖 No branches found'));
-				process.exit(1);
+				return await this.exitHandler(1);
 			}
 
 			if (branches.length === 1) {
@@ -211,7 +212,7 @@ export class Dev extends AuthenticatedCommand {
 
 			if (!branch) {
 				console.log(chalk.red('🤖 No branches selected'));
-				process.exit(1);
+				return await this.exitHandler(1);
 			}
 
 			this.bundle = await this.startBundle(branch, orgName, repository.name, outputCategory);
@@ -219,7 +220,7 @@ export class Dev extends AuthenticatedCommand {
 
 		if (!this.bundle) {
 			console.log(chalk.red('🤖 Could not start bundle'));
-			process.exit(1);
+			return await this.exitHandler(1);
 		}
 
 		// replace bundleId in endpoints with actual bundle.id
@@ -228,7 +229,15 @@ export class Dev extends AuthenticatedCommand {
 			endpointConfig.url = devstackUrl(endpointConfig.url.replace('{bundleId}', this.bundle.id));
 		});
 
-		// ToDo: sync local files with devstack
+		const synced = await this.syncLocalFilesToDevstack(repository.name);
+
+		if (!synced) {
+			console.log(chalk.red(`🤖 Could not sync local files to devstack`));
+			return await this.exitHandler(1);
+		}
+
+		// after syncing local files to devstack, we need to manually start the file watcher for the bundle
+		await this.startBundleWatcher(orgName);
 
 		// run preview
 		const tasks = new Listr([{
@@ -240,11 +249,11 @@ export class Dev extends AuthenticatedCommand {
 					throw new Error('Bundling resize unavailable');
 				}
 
-				const url = studioUrl(`visuals/local/${this.bundle.id}/${selectedFolder}`);
+				const url = studioUrl(`/visuals/local/${this.bundle.id}/${selectedFolder}`);
 
 				await open(url);
 
-				task.title = chalk.green(`🌍 Otevírám prohlížeč s náhledem kreativy: ${url}`);
+				task.title = chalk.green(`🌍 Preview bundle: ${url}`);
 			}
 		}], {});
 
@@ -255,7 +264,7 @@ export class Dev extends AuthenticatedCommand {
 		console.log(chalk.blue('🤖 Watching for changes... Press ctrl + c to stop bundler'));
 	}
 
-	async exitHandler(): Promise<void> {
+	async exitHandler(code: number = 0): Promise<void> {
 		const tasks = new Listr([{
 			title: chalk.blue('Stopping bundler...'),
 			task: async (ctx, task): Promise<void> => {
@@ -283,13 +292,17 @@ export class Dev extends AuthenticatedCommand {
 					await this.performRequest(config);
 				}
 
+				if (this.localZipPath && fs.existsSync(this.localZipPath)) {
+					await fs.unlink(this.localZipPath);
+				}
+
 				task.title = chalk.green(`Stopped`);
 			}
 		}]);
 
 		await this.runTasks(tasks);
 
-		process.exit(0);
+		process.exit(code);
 	}
 
 	async getLastVisual() {
@@ -353,7 +366,7 @@ export class Dev extends AuthenticatedCommand {
 	async getRepository(orgName: string, repoName: string): Promise<any> {
 		try {
 			const config = {
-				url: devstackUrl(`gitea/repos/${repoName}`),
+				url: devstackUrl(`/gitea/repos/${repoName}`),
 				method: 'get',
 				headers: {
 					'X-Organization': orgName,
@@ -377,7 +390,7 @@ export class Dev extends AuthenticatedCommand {
 	async getBranches(orgName: string, repoName: string): Promise<any> {
 		try {
 			const config = {
-				url: devstackUrl(`gitea/branches`),
+				url: devstackUrl(`/gitea/branches`),
 				method: 'get',
 				params: {
 					gitRepoName: repoName,
@@ -438,6 +451,11 @@ export class Dev extends AuthenticatedCommand {
 					gitOrgName: orgName,
 					gitRepoName: repoName,
 					outputCategory: outputCategory,
+					// initially we stop the bundle file watcher on devstack side
+					// because we'll be performing an ingest operation which would
+					// unnecessary fire file change events, after ingest, we need to
+					// manually start the watcher again
+					startFileWatcher: false,
 				},
 				headers: {
 					'X-Organization': orgName,
@@ -456,6 +474,73 @@ export class Dev extends AuthenticatedCommand {
 
 			return null;
 		}
+	}
+
+	async startBundleWatcher(orgName: string): Promise<void> {
+		try {
+			const config = {
+				url: devstackUrl(`/bundle-watchers/start/${this.bundle.id}`),
+				method: 'POST',
+				headers: {
+					'X-Organization': orgName,
+				},
+			};
+
+			await this.performRequest(config);
+		} catch (error: any) {
+			Sentry.captureException(error);
+
+			if (this.isDebugging) {
+				this.reportError(error);
+			}
+		}
+	}
+
+	async syncLocalFilesToDevstack(gitRepoName: string): Promise<boolean> {
+		const tasks = new Listr([{
+			title: chalk.blue('Syncing local files to devstack...'),
+			task: async (ctx, task) => {
+				const zip = new AdmZip();
+
+				if (!this.visualRoot) {
+					return;
+				}
+
+				// add everything from visual except hidden files to zip
+				zip.addLocalFolder(this.visualRoot, undefined, (filename: string) => filename.indexOf('.') !== 0);
+
+				// create unique zip file name
+				const zipName = `${gitRepoName}-${Date.now()}.zip`;
+				this.localZipPath = path.join(this.visualRoot, zipName);
+
+				// save zip file to disk
+				zip.writeZip(this.localZipPath);
+
+				const formData = new FormData();
+
+				formData.append('bundleId', this.bundle.id);
+				formData.append('path', '/');
+				formData.append('files[]', fs.createReadStream(this.localZipPath), zipName);
+
+				const config = {
+					url: devstackUrl('/ingest'),
+					method: 'POST',
+					cancelToken: this.getCancelToken(this.localZipPath),
+					data: formData,
+					headers: {
+						'Content-Type': `multipart/form-data; boundary=${formData.getBoundary()}`,
+					}
+				};
+
+				await this.performRequest(config);
+
+				await fs.unlink(this.localZipPath);
+
+				task.title = chalk.green('Synced local files to devstack');
+			}
+		}]);
+
+		return await this.runTasks(tasks);
 	}
 
 	async previewResize(orgName: string, bundleId: number, label: string): Promise<any> {
@@ -489,7 +574,7 @@ export class Dev extends AuthenticatedCommand {
 	async startWatcher(): Promise<any> {
 		if (!this.visualRoot) {
 			console.log(chalk.red('🛑 Visual root not set! Cannot start watcher.'));
-			process.exit(1);
+			return await this.exitHandler(1);
 		}
 
 		// init file watcher
@@ -644,15 +729,19 @@ export class Dev extends AuthenticatedCommand {
 		await this.runTasks(tasks);
 	}
 
-	async runTasks(tasks: Listr): Promise<void> {
+	async runTasks(tasks: Listr): Promise<boolean> {
 		try {
 			await tasks.run();
+
+			return true;
 		} catch (error: any) {
 			Sentry.captureException(error);
 
 			if (this.isDebugging) {
 				this.reportError(error);
 			}
+
+			return false;
 		}
 	}
 }

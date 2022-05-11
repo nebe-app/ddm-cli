@@ -24,6 +24,7 @@
 		"@oclif/plugin-update": "^3.0.0",
 		"@oclif/plugin-warn-if-update-available": "^2.0.4",
 		"@sentry/node": "^6.19.7",
+		"adm-zip": "^0.5.9",
 		"axios": "^0.27.2",
 		"chalk": "^4.1.2",
 		"chokidar": "^3.5.3",
@@ -49,6 +50,7 @@
 	},
 	"devDependencies": {
 		"@oclif/test": "^2",
+		"@types/adm-zip": "^0.5.0",
 		"@types/chai": "^4",
 		"@types/cli-table": "^0.3.0",
 		"@types/configstore": "^5.0.1",
