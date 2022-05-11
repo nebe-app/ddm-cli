@@ -2,13 +2,13 @@ import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import checkConfig from '../utils/checkConfig';
 import checkSchema from '../utils/checkSchema';
 import { getRoot } from '../utils/configGetters';
 
-export class Validate extends BaseCommand {
+export class Validate extends AuthenticatedCommand {
 	static description = 'Validate the config and schema of all local visuals';
 
 	async run(): Promise<void> {

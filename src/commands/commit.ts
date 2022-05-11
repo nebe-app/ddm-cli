@@ -3,12 +3,12 @@ import fs from 'fs';
 import simpleGit from 'simple-git';
 import Table from 'cli-table';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 import chalk from 'chalk';
 
-export class Commit extends BaseCommand {
+export class Commit extends AuthenticatedCommand {
 	static description = 'Commit changes to the repository';
 
 	// hide the command from help

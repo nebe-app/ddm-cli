@@ -3,12 +3,12 @@ import fs from 'fs';
 import simpleGit from 'simple-git';
 import { Flags } from '@oclif/core';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 import Listr, { ListrContext, ListrTask, ListrTaskWrapper } from 'listr';
 
-export class Push extends BaseCommand {
+export class Push extends AuthenticatedCommand {
 	static description = 'Push all local visuals';
 
 	static flags = {

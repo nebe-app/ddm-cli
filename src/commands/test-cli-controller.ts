@@ -1,11 +1,11 @@
 import axios from 'axios';
 import * as Sentry from '@sentry/node';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import { getUsername, getPassword } from '../utils/configGetters';
 import apiUrl from '../utils/apiUrl';
 
-export class TestCliController extends BaseCommand {
+export class TestCliController extends AuthenticatedCommand {
 	static description = 'Test whether CLI Controller in app is working';
 
 	// hide the command from help

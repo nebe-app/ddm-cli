@@ -4,11 +4,11 @@ import simpleGit from 'simple-git';
 import Listr, { ListrTask } from 'listr';
 import { Flags } from '@oclif/core';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 
-export class Fetch extends BaseCommand {
+export class Fetch extends AuthenticatedCommand {
 	static description = 'Fetch all local visuals';
 
 	static flags = {

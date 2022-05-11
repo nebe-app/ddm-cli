@@ -7,11 +7,11 @@ import Listr from 'listr';
 import * as Sentry from '@sentry/node';
 import { Flags } from '@oclif/core';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import apiUrl from '../utils/apiUrl';
 import { getRoot, getUsername, getPassword, setConfig, getConfig, getCommand } from '../utils/configGetters';
 
-export class Create extends BaseCommand {
+export class Create extends AuthenticatedCommand {
 	static description = 'Creates new visual';
 
 	static flags = {

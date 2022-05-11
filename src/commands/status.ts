@@ -4,11 +4,11 @@ import chalk from 'chalk';
 import simpleGit from 'simple-git';
 import Table from 'cli-table';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
 
-export class Status extends BaseCommand {
+export class Status extends AuthenticatedCommand {
 	static description = 'Git status of all local visuals';
 
 	async run(): Promise<void> {

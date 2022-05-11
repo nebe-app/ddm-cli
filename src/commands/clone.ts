@@ -3,9 +3,9 @@ import fs from 'fs';
 import simpleGit from 'simple-git';
 import { getRoot, getUsername, getPassword } from '../utils/configGetters';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 
-export class Clone extends BaseCommand {
+export class Clone extends AuthenticatedCommand {
 	static args = [
 		{ name: 'repoName', required: true },
 	];

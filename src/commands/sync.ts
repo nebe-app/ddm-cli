@@ -8,12 +8,12 @@ import rimraf from 'rimraf';
 import * as Sentry from '@sentry/node';
 import { Flags } from '@oclif/core';
 
-import BaseCommand from '../BaseCommand';
+import AuthenticatedCommand from '../AuthenticatedCommand';
 import apiUrl from '../utils/apiUrl';
 import getDirectories from '../utils/getDirectories';
 import { getRoot, getUsername, getPassword, getConfig, setConfig, isSazka } from '../utils/configGetters';
 
-export class Sync extends BaseCommand {
+export class Sync extends AuthenticatedCommand {
 	static description = 'Download all synced visuals';
 
 	static flags = {
