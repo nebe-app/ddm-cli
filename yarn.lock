@@ -964,6 +964,13 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
+"@frigus/is-hidden-file@^1.0.1":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@frigus/is-hidden-file/-/is-hidden-file-1.0.2.tgz#e089f1be3d97886f8f3d09635edba1e3e9da61b0"
+  integrity sha512-voXAo5P5qitTG+E1BSaE4DqUSa+wXyMmq50g5tm2SMt2CRcKV2/6YHmn0BurVqHXJkWW0Jyb72K6889f3yA5Mg==
+  dependencies:
+    path "^0.12.7"
+
 "@gar/promisify@^1.0.1", "@gar/promisify@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"

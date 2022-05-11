@@ -9,6 +9,7 @@ import AdmZip from 'adm-zip';
 import FormData from 'form-data';
 import Listr from 'listr';
 import chokidar from 'chokidar';
+import isHiddenFile from '@frigus/is-hidden-file';
 import * as Sentry from '@sentry/node';
 import { Flags } from '@oclif/core';
 
@@ -507,7 +508,7 @@ export class Dev extends AuthenticatedCommand {
 				}
 
 				// add everything from visual except hidden files to zip
-				zip.addLocalFolder(this.visualRoot, undefined, (filename: string) => filename.indexOf('.') !== 0);
+				zip.addLocalFolder(this.visualRoot, undefined, (filename: string) => !isHiddenFile(filename));
 
 				// create unique zip file name
 				const zipName = `${gitRepoName}-${Date.now()}.zip`;
