@@ -86,14 +86,6 @@ export class Dev extends AuthenticatedCommand {
 
 		this.isDebugging = debug;
 
-		// Bind exit handler
-
-		process.on('exit', this.exitHandler.bind(this));
-		process.on('SIGINT', this.exitHandler.bind(this));
-		process.on('SIGUSR1', this.exitHandler.bind(this));
-		process.on('SIGUSR2', this.exitHandler.bind(this));
-		process.on('SIGTERM', this.exitHandler.bind(this));
-
 		// Prepare folder
 
 		const root = getRoot();

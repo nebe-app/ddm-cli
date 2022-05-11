@@ -11,6 +11,16 @@ export default abstract class BaseCommand extends Command {
 	// region Hooks
 
 	async init(): Promise<void> {
+		// Bind exit handler
+
+		process.on('exit', this.exitHandler.bind(this));
+		process.on('SIGINT', this.exitHandler.bind(this));
+		process.on('SIGUSR1', this.exitHandler.bind(this));
+		process.on('SIGUSR2', this.exitHandler.bind(this));
+		process.on('SIGTERM', this.exitHandler.bind(this));
+
+		// Init sentry
+
 		Sentry.init({
 			dsn: 'https://02902c9ddb584992a780788c71ba5cd7@o562268.ingest.sentry.io/6384635',
 			release: `ddm-cli@${this.config.pjson.version}`,
@@ -30,6 +40,14 @@ export default abstract class BaseCommand extends Command {
 
 	async finally(): Promise<void> {
 		Sentry.close();
+	}
+
+	// endregion
+
+	// region Custom hooks
+
+	async exitHandler(code: number): Promise<void> {
+		// implement custom exit handling
 	}
 
 	// endregion
