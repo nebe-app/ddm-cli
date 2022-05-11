@@ -46,8 +46,9 @@ export default abstract class BaseCommand extends Command {
 
 	// region Custom hooks
 
-	async exitHandler(code: number): Promise<void> {
+	async exitHandler(code: number = 0): Promise<void> {
 		// implement custom exit handling
+		process.exit(code);
 	}
 
 	// endregion
@@ -81,8 +82,7 @@ export default abstract class BaseCommand extends Command {
 			const accessToken = getAccessToken();
 
 			if (!accessToken) {
-				console.log(chalk.red('No access token found! Cannot perform request.'));
-				return;
+				throw new Error(`User not logged in, please use the "${this.config.bin} login" command first`);
 			}
 
 			headers.Authorization = accessToken;

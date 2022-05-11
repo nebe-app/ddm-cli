@@ -10,7 +10,7 @@ import { Flags } from '@oclif/core';
 
 import BaseCommand from '../BaseCommand';
 import accountsUrl from '../utils/accountsUrl';
-import { setConfig, getAccessToken } from '../utils/configGetters';
+import { setConfig, setUser } from '../utils/configGetters';
 import { Token } from '../types/login';
 
 export class Login extends BaseCommand {
@@ -107,21 +107,13 @@ export class Login extends BaseCommand {
 						if (token) {
 							this.setToken(token);
 
-							const accessToken = getAccessToken();
-
-							if (!accessToken) {
-								clearInterval(checkInterval);
-								throw new Error(`Something went wrong while trying to log you in, please try again later`);
-							}
-
 							try {
-								const { data: user } = await axios.get(accountsUrl('user'), {
-									headers: {
-										Authorization: accessToken,
-									},
+								const { data: user } = await this.performRequest({
+									url: accountsUrl('user'),
+									method: 'GET',
 								});
 
-								this.setUser(user);
+								setUser(user);
 
 								task.title = chalk.green(`User ${user.email} successfully logged in`);
 
@@ -156,13 +148,5 @@ export class Login extends BaseCommand {
 
 	setToken(token: Token): void {
 		setConfig('token', token);
-	}
-
-	setUser(user: any) {
-		setConfig('username', user.git_username);
-		setConfig('password', user.git_password);
-		setConfig('email', user.email);
-		setConfig('user_id', user.id);
-		setConfig('name', user.name);
 	}
 }

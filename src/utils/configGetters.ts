@@ -55,6 +55,14 @@ const getCommand = function (command: string): string {
 	return isSazka() ? `ddm ${command} --sazka` : `ddm ${command}`;
 }
 
+const setUser = function (user: any) {
+	setConfig('username', user.git_username);
+	setConfig('password', user.git_password);
+	setConfig('email', user.email);
+	setConfig('user_id', user.id);
+	setConfig('name', user.name);
+}
+
 export {
 	isSazka,
 	isLocal,
@@ -66,5 +74,6 @@ export {
 	getConfig,
 	getAccessToken,
 	getBin,
-	getCommand
+	getCommand,
+	setUser
 };
