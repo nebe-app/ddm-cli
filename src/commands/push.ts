@@ -48,7 +48,7 @@ export class Push extends BaseCommand {
 				tasks.push({
 					title: `Pushing ${visualPath}`,
 					task: async (ctx: ListrContext, task: ListrTaskWrapper) => await this.push(visualPath, task),
-				})
+				});
 			}
 		}
 
