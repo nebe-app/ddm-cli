@@ -1,20 +1,28 @@
 import chalk from 'chalk';
 import fs from 'fs';
 import simpleGit from 'simple-git';
-import { getRoot, getUsername, getPassword } from '../utils/configGetters';
+import * as Sentry from '@sentry/node';
+import { Flags } from '@oclif/core';
 
 import AuthenticatedCommand from '../AuthenticatedCommand';
+import { getRoot, getUsername, getPassword } from '../utils/configGetters';
+
 
 export class Clone extends AuthenticatedCommand {
+	static description = 'Clone existing visual';
+
+	static flags = {
+		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
+	};
+
 	static args = [
 		{ name: 'repoName', required: true },
 	];
 
-	static description = 'Clone existing visual';
-
 	async run(): Promise<void> {
-		const { args } = await this.parse(Clone);
+		const { args, flags } = await this.parse(Clone);
 		const { repoName } = args;
+		const { debug } = flags;
 
 		if (repoName.indexOf('/') === -1) {
 			console.error(chalk.red('Invalid repo name'));
@@ -48,15 +56,23 @@ export class Clone extends AuthenticatedCommand {
 		try {
 			await fs.promises.mkdir(`${root}/src/${brandFolder}`);
 			await fs.promises.mkdir(`${root}/src/${repoName}`);
-		} catch (error) {
+		} catch (error: any) {
 		}
 
 		try {
 			console.log(chalk.blue('Starting cloning...'));
-			await simpleGit().clone(remote, `${root}/src/${repoName}`, { '--depth': '1' });
+
+			const git = simpleGit();
+
+			await git.clone(remote, `${root}/src/${repoName}`, { '--depth': '1' });
+
 			console.log(chalk.green('Repository successfully cloned'));
-		} catch (error) {
-			console.error(error);
+		} catch (error: any) {
+			Sentry.captureException(error);
+
+			if (debug) {
+				this.reportError(error);
+			}
 		}
 	}
 }
