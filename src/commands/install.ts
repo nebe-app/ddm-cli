@@ -4,6 +4,7 @@ import fs from 'fs';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import rimraf from 'rimraf';
+import asciiArt from 'ascii-art';
 import { existsSync, readJsonSync } from 'fs-extra';
 
 import BaseCommand from '../BaseCommand';
@@ -13,6 +14,10 @@ export class Install extends BaseCommand {
 	static description = 'Set home directory for visuals and prepare dev environment';
 
 	async run(): Promise<void> {
+		const art = await asciiArt.font('DDM - CLI', 'Doom');
+
+		console.log(art);
+
 		const currentRoot = getRoot();
 
 		if (currentRoot) {
