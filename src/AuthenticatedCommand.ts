@@ -5,6 +5,8 @@ import accountsUrl from './utils/accountsUrl';
 import { setUser } from './utils/configGetters';
 
 export default abstract class AuthenticatedCommand extends BaseCommand {
+	private user: any;
+
 	async init(): Promise<void> {
 		await super.init();
 
@@ -14,7 +16,9 @@ export default abstract class AuthenticatedCommand extends BaseCommand {
 				method: 'GET',
 			});
 
-			setUser(user);
+			this.user = user;
+
+			setUser(this.user);
 		} catch (error: any) {
 			// ToDo: attempt to refresh token
 			console.log(chalk.red(error.message));
