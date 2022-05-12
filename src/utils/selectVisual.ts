@@ -24,7 +24,7 @@ export default async function selectVisual() {
 		selectedBrand = brands[0];
 	} else {
 		const brandChoices = {
-			type: 'list',
+			type: 'search-list',
 			name: 'selectedBrand',
 			message: 'Select brand',
 			choices: brands.map((brandPath) => brandPath.toString()
@@ -58,7 +58,7 @@ export default async function selectVisual() {
 	visuals.reverse();
 
 	const visualsChoices = {
-		type: 'list',
+		type: 'search-list',
 		name: 'first',
 		message: 'Select visual',
 		choices: visuals.map((visualPath) => visualPath

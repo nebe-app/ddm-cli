@@ -196,7 +196,7 @@ export class Dev extends AuthenticatedCommand {
 
 			if (!branch) {
 				const branchChoices = {
-					type: 'list',
+					type: 'search-list',
 					name: 'selectedBranch',
 					message: 'Select branch',
 					choices: branches,
