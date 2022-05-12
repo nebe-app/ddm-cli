@@ -3,9 +3,10 @@ import chalk from 'chalk';
 import BaseCommand from './BaseCommand';
 import accountsUrl from './utils/accountsUrl';
 import { setUser } from './utils/configGetters';
+import { User } from './types/authenticatedCommand';
 
 export default abstract class AuthenticatedCommand extends BaseCommand {
-	private user: any;
+	protected user: User | null = null;
 
 	async init(): Promise<void> {
 		await super.init();
@@ -16,12 +17,13 @@ export default abstract class AuthenticatedCommand extends BaseCommand {
 				method: 'GET',
 			});
 
-			this.user = user;
+			this.user = user as User;
 
 			setUser(this.user);
 		} catch (error: any) {
 			// ToDo: attempt to refresh token
-			console.log(chalk.red(error.message));
+			this.reportError(error);
+
 			return await this.exitHandler(1);
 		}
 	}
