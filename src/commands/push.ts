@@ -1,27 +1,32 @@
 import path from 'path';
 import fs from 'fs';
 import simpleGit from 'simple-git';
-import { Flags } from '@oclif/core';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
+import { Flags } from '@oclif/core'
+import Listr, { ListrContext, ListrTask, ListrTaskWrapper } from 'listr';
 
 import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
 import { getRoot } from '../utils/configGetters';
-import Listr, { ListrContext, ListrTask, ListrTaskWrapper } from 'listr';
 
 export class Push extends AuthenticatedCommand {
 	static description = 'Push all local visuals';
 
 	static flags = {
 		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
-	}
+	};
 
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Push);
 		const { debug } = flags;
 
 		const root: string = getRoot();
+		const git = simpleGit();
 		const brandFolders: string[] = await getDirectories(path.join(root, 'src'));
 		const tasks: ListrTask[] = [];
+		const changedVisuals: any[] = [];
 		const brands: string[] = brandFolders.filter((folder: string) => {
 			return folder[0] !== '.';
 		});
@@ -45,11 +50,51 @@ export class Push extends AuthenticatedCommand {
 				const visual: string = visuals[visualIndex];
 				const visualPath: string = path.join(root, 'src', brand, visual);
 
-				tasks.push({
-					title: `Pushing ${visualPath}`,
-					task: async (ctx: ListrContext, task: ListrTaskWrapper) => await this.push(visualPath, task),
-				});
+				try {
+					await git.cwd(visualPath);
+
+					const status = await git.status();
+
+					if (status.files.length < 1) {
+						continue;
+					}
+
+					changedVisuals.push({
+						name: `${visual} (Changed ${status.files.length} files)`,
+						value: visualPath,
+						checked: true,
+					});
+				} catch (error: any) {
+					Sentry.captureException(error);
+
+					if (debug) {
+						this.reportError(error);
+					}
+				}
 			}
+		}
+
+		const visualChoices = {
+			type: 'checkbox',
+			name: 'selectedVisuals',
+			message: 'Select visuals to be pushed',
+			choices: changedVisuals,
+		};
+
+		const visualAnswers = await inquirer.prompt([visualChoices]);
+		const { selectedVisuals } = visualAnswers;
+
+		for (let visualPath of selectedVisuals) {
+			// ToDo: prompt commit message?
+			tasks.push({
+				title: `Pushing ${visualPath}`,
+				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await this.push(visualPath, task),
+			});
+		}
+
+		if (tasks.length < 1) {
+			console.log(chalk.red('No visuals selected'));
+			await this.exitHandler(1);
 		}
 
 		const runner = new Listr(tasks, {
@@ -61,7 +106,11 @@ export class Push extends AuthenticatedCommand {
 		try {
 			await runner.run();
 		} catch (error) {
-			// do nothing (this is here to silence ugly errors thrown into the console, listr prints errors in a pretty way)
+			Sentry.captureException(error);
+
+			if (debug) {
+				this.reportError(error);
+			}
 		}
 	}
 
