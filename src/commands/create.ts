@@ -5,8 +5,6 @@ import simpleGit from 'simple-git';
 import Listr from 'listr';
 import * as Sentry from '@sentry/node';
 import { Flags } from '@oclif/core';
-// @ts-ignore
-import inquirerSearchList from 'inquirer-search-list';
 
 import AuthenticatedCommand from '../AuthenticatedCommand';
 import { getRoot, setConfig, getConfig, getCommand } from '../utils/configGetters';
@@ -34,8 +32,6 @@ export class Create extends AuthenticatedCommand {
 		}
 
 		const root = getRoot();
-
-		inquirer.registerPrompt('search-list', inquirerSearchList);
 
 		let brands;
 

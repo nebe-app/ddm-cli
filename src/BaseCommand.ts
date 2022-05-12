@@ -1,5 +1,7 @@
+// @ts-ignore
+import inquirerSearchList from 'inquirer-search-list';
+import inquirer from 'inquirer';
 import axios, { AxiosRequestConfig, CancelToken } from 'axios';
-import chalk from 'chalk';
 import { Command } from '@oclif/core';
 import { CancelTokens } from './types/baseCommand';
 import { getAccessToken } from './utils/configGetters';
@@ -31,6 +33,9 @@ export default abstract class BaseCommand extends Command {
 				captureUnhandledRejections: true
 			},
 		});
+
+		// register custom prompts for inquirer
+		inquirer.registerPrompt('search-list', inquirerSearchList);
 	}
 
 	async catch(error: any): Promise<void> {
