@@ -89,11 +89,11 @@ export class Login extends BaseCommand {
 		const runner = new Listr([
 			{
 				title: 'Awaiting login in browser...',
-				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await new Promise<void>((resolve, reject) => {
+				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await new Promise<void>((resolve) => {
 					let checks = 0;
 
 					const checkInterval: ReturnType<typeof setInterval> = setInterval(async () => {
-						if (local) {
+						if (debug) {
 							task.title = `Awaiting login in browser... (${checks + 1}x)`;
 						}
 
@@ -120,25 +120,32 @@ export class Login extends BaseCommand {
 								clearInterval(checkInterval);
 								resolve();
 							} catch (error: any) {
-								console.log(chalk.red(error.message));
+								Sentry.captureException(error);
+
+								if (debug) {
+									this.reportError(error);
+								}
 
 								if (server) {
 									await server.close();
 								}
 
-								process.exit(1);
+								await this.exitHandler(1);
 							}
 						}
 					}, 2000);
 				})
 			}
-		], { renderer: debug ? 'verbose' : 'default' });
+		]);
 
 		try {
 			await runner.run();
 		} catch (error: any) {
 			Sentry.captureException(error);
-			console.log(chalk.red(error.message));
+
+			if (debug) {
+				this.reportError(error);
+			}
 		}
 
 		if (server) {
