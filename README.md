@@ -7,10 +7,7 @@ ______ ______ ___  ___           _____  _      _____
 |___/  |___/  \_|  |_/           \____/\_____/ \___/
 ```
 
-DDM CLI
-=================
-
-Development stack for creating DDM visuals
+### Development stack for creating DDM visuals
 
 # Usage
 
