@@ -3,6 +3,8 @@ import path from 'path';
 import chalk from 'chalk';
 import simpleGit from 'simple-git';
 import Table from 'cli-table';
+import * as Sentry from '@sentry/node';
+import { Flags } from '@oclif/core';
 
 import AuthenticatedCommand from '../AuthenticatedCommand';
 import getDirectories from '../utils/getDirectories';
@@ -11,7 +13,14 @@ import { getRoot } from '../utils/configGetters';
 export class Status extends AuthenticatedCommand {
 	static description = 'Git status of all local visuals';
 
+	static flags = {
+		debug: Flags.boolean({ char: 'd', description: 'Debug mode', required: false, default: false }),
+	};
+
 	async run(): Promise<void> {
+		const { flags } = await this.parse(Status);
+		const { debug } = flags;
+
 		const root = getRoot();
 		const git = simpleGit();
 		const brandFolders = await getDirectories(path.join(root, 'src'));
@@ -64,16 +73,19 @@ export class Status extends AuthenticatedCommand {
 
 					if (status.files.length) {
 						const fileNames = status.files.map((file) => file.path).join(', ');
-						const currentBranch = status.current === 'master'
-							? status.current
-							: chalk.yellow(`${status.current} (not on master)`);
+						const currentBranch = status.current === 'master' ? status.current : chalk.yellow(`${status.current} (not on master)`);
 
 						table.push([brand, visual, currentBranch, `Changed ${status.files.length} files: ${fileNames}`]);
 						tableContainsRows = true;
 					}
-
 				} catch (error: any) {
-					table.push([brand, visual, 'Error: ' + error.toString()]);
+					Sentry.captureException(error);
+
+					if (debug) {
+						this.reportError(error);
+					}
+
+					table.push([brand, visual, `Error: ${error.toString()}`]);
 					tableContainsRows = true;
 				}
 			}
