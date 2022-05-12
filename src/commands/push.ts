@@ -87,7 +87,7 @@ export class Push extends AuthenticatedCommand {
 		for (let visualPath of selectedVisuals) {
 			// ToDo: prompt commit message?
 			tasks.push({
-				title: `Pushing ${visualPath}`,
+				title: chalk.blue(`Pushing "${visualPath}"...`),
 				task: async (ctx: ListrContext, task: ListrTaskWrapper) => await this.push(visualPath, task),
 			});
 		}
@@ -122,14 +122,11 @@ export class Push extends AuthenticatedCommand {
 		}
 
 		await git.cwd(visualPath);
-		const status = await git.status();
 
-		if (status.files.length) {
-			await git.add('./*');
-			await git.commit(`Changes`);
-			await git.push('origin', 'master');
-		} else {
-			task.skip('No changes, skipping');
-		}
+		await git.add('./*');
+		await git.commit(`Changes`);
+		await git.push('origin', 'master');
+
+		task.title = chalk.green(`Pushed "${visualPath}"`);
 	}
 }
