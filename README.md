@@ -9,20 +9,55 @@ ______ ______ ___  ___           _____  _      _____
 
 ### Development stack for creating DDM visuals
 
+# Installation
+
+<!-- installation -->
+
+```shell
+$ npm install -g ddm-cli
+```
+
+or
+
+```shell
+$ yarn global add ddm-cli
+```
+
+<!-- installation stop -->
+
+# Getting started
+
+<!-- getting started -->
+
+- Create proper directory structure `$ ddm install`
+- Login to your accounts `$ ddm login`
+- Sync visuals `$ ddm sync`
+
+<!-- getting started stop -->
+
+# List commands
+
+<!-- list commands -->
+
+```shell
+$ ddm help
+```
+
+<!-- list commands stop -->
+
 # Usage
 
 <!-- usage -->
 
-```sh-session
-$ npm install -g ddm-cli
-$ ddm COMMAND
+```shell
+$ ddm [COMMAND]
 running command...
 $ ddm (--version)
-ddm-cli/0.0.0 darwin-x64 node-v14.17.3
-$ ddm --help [COMMAND]
+ddm-cli/2.0.0 darwin-x64 node-v14.17.3
+$ ddm [COMMAND] --help
 USAGE
   $ ddm COMMAND
 ...
 ```
 
-<!-- usagestop -->
+<!-- usage stop -->
