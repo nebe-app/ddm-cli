@@ -14,13 +14,13 @@ ______ ______ ___  ___           _____  _      _____
 <!-- installation -->
 
 ```shell
-$ npm install -g ddm-cli
+npm install -g ddm-cli
 ```
 
 or
 
 ```shell
-$ yarn global add ddm-cli
+yarn global add ddm-cli
 ```
 
 <!-- installation stop -->
