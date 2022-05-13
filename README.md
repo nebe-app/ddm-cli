@@ -9,6 +9,8 @@ ______ ______ ___  ___           _____  _      _____
 
 ### Development stack for creating DDM visuals
 
+[![npm](https://img.shields.io/npm/v/ddm-cli.svg)](https://www.npmjs.com/package/ddm-cli)
+
 # Installation
 
 <!-- installation -->
