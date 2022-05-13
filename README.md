@@ -62,16 +62,3 @@ USAGE
 ...
 ```
 <!-- usagestop -->
-
-```shell
-$ ddm [COMMAND]
-running command...
-$ ddm (--version)
-ddm-cli/2.0.0 darwin-x64 node-v14.17.3
-$ ddm [COMMAND] --help
-USAGE
-  $ ddm COMMAND
-...
-```
-
-<!-- usage stop -->
