@@ -62,7 +62,7 @@ export class Login extends BaseCommand {
 				return res.status(400).send(error.message);
 			}
 
-			return res.sendFile(path.join(__dirname, '../static/index.html'));
+			return res.sendFile(path.join(__dirname, '../assets/success.html'));
 		});
 
 		const server = await app.listen(this.ExpressPort);
