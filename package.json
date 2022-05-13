@@ -1,6 +1,6 @@
 {
 	"name": "ddm-cli",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "Development stack for creating DDM visuals",
 	"author": "Patrik Janosdeak @truesteps",
 	"bin": {
@@ -42,7 +42,6 @@
 		"inquirer-search-list": "^1.2.6",
 		"listr": "^0.14.3",
 		"open": "^8.4.0",
-		"parcel-bundler": "^1.9.4",
 		"path": "^0.12.7",
 		"pdf2pic": "^2.1.4",
 		"randomstring": "^1.2.2",
@@ -65,7 +64,6 @@
 		"@types/mocha": "^9.0.0",
 		"@types/node": "^16.11.33",
 		"@types/node-notifier": "^8.0.2",
-		"@types/parcel-bundler": "^1.12.4",
 		"@types/randomstring": "^1.1.8",
 		"@types/rimraf": "^3.0.2",
 		"@types/tcp-port-used": "^1.0.1",
