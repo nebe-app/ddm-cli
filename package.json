@@ -1,6 +1,6 @@
 {
 	"name": "ddm-cli",
-	"version": "2.0.4",
+	"version": "2.0.5",
 	"description": "Development stack for creating DDM visuals",
 	"author": "Patrik Janosdeak @truesteps",
 	"bin": {
@@ -89,6 +89,12 @@
 			"@oclif/plugin-warn-if-update-available",
 			"@oclif/plugin-autocomplete"
 		],
+		"update": {
+			"s3": {
+				"host": "https://ddm-cli-dist.ddco.app",
+				"bucket": "ddm-cli-distributions"
+			}
+		},
 		"topicSeparator": " "
 	},
 	"scripts": {
