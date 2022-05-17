@@ -55,7 +55,7 @@ $ npm install -g ddm-cli
 $ ddm COMMAND
 running command...
 $ ddm (--version)
-ddm-cli/2.0.11 darwin-x64 node-v14.17.3
+ddm-cli/2.0.12 darwin-x64 node-v14.17.3
 $ ddm --help [COMMAND]
 USAGE
   $ ddm COMMAND
@@ -124,7 +124,7 @@ DESCRIPTION
   Clone existing visual
 ```
 
-_See code: [dist/commands/clone.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/clone.ts)_
+_See code: [dist/commands/clone.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/clone.ts)_
 
 ## `ddm convert-pdf`
 
@@ -141,7 +141,7 @@ DESCRIPTION
   Convert pdf to jpg
 ```
 
-_See code: [dist/commands/convert-pdf.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/convert-pdf.ts)_
+_See code: [dist/commands/convert-pdf.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/convert-pdf.ts)_
 
 ## `ddm create`
 
@@ -158,7 +158,7 @@ DESCRIPTION
   Creates new visual
 ```
 
-_See code: [dist/commands/create.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/create.ts)_
+_See code: [dist/commands/create.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/create.ts)_
 
 ## `ddm dev`
 
@@ -178,7 +178,7 @@ DESCRIPTION
   Run development server to create visuals
 ```
 
-_See code: [dist/commands/dev.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/dev.ts)_
+_See code: [dist/commands/dev.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/dev.ts)_
 
 ## `ddm fetch`
 
@@ -195,7 +195,7 @@ DESCRIPTION
   Fetch all local visuals
 ```
 
-_See code: [dist/commands/fetch.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/fetch.ts)_
+_See code: [dist/commands/fetch.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/fetch.ts)_
 
 ## `ddm help [COMMAND]`
 
@@ -229,7 +229,7 @@ DESCRIPTION
   Set home directory for visuals and prepare dev environment
 ```
 
-_See code: [dist/commands/install.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/install.ts)_
+_See code: [dist/commands/install.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/install.ts)_
 
 ## `ddm login`
 
@@ -247,7 +247,7 @@ DESCRIPTION
   Authorize CLI against web application
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/login.ts)_
 
 ## `ddm pull`
 
@@ -264,7 +264,7 @@ DESCRIPTION
   Pull all local visuals
 ```
 
-_See code: [dist/commands/pull.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/pull.ts)_
+_See code: [dist/commands/pull.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/pull.ts)_
 
 ## `ddm push`
 
@@ -281,7 +281,7 @@ DESCRIPTION
   Push all local visuals
 ```
 
-_See code: [dist/commands/push.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/push.ts)_
+_See code: [dist/commands/push.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/push.ts)_
 
 ## `ddm status`
 
@@ -298,7 +298,7 @@ DESCRIPTION
   Git status of all local visuals
 ```
 
-_See code: [dist/commands/status.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/status.ts)_
+_See code: [dist/commands/status.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/status.ts)_
 
 ## `ddm sync`
 
@@ -316,7 +316,7 @@ DESCRIPTION
   Download all synced visuals
 ```
 
-_See code: [dist/commands/sync.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/sync.ts)_
+_See code: [dist/commands/sync.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/sync.ts)_
 
 ## `ddm update [CHANNEL]`
 
@@ -367,5 +367,5 @@ DESCRIPTION
   Validate the config and schema of all local visuals
 ```
 
-_See code: [dist/commands/validate.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.11/dist/commands/validate.ts)_
+_See code: [dist/commands/validate.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.12/dist/commands/validate.ts)_
 <!-- commandsstop -->
