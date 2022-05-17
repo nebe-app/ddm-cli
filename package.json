@@ -1,6 +1,6 @@
 {
 	"name": "ddm-cli",
-	"version": "2.0.10",
+	"version": "2.0.11",
 	"description": "Development stack for creating DDM visuals",
 	"author": "Patrik Janosdeak @truesteps",
 	"bin": {
