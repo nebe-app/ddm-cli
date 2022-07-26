@@ -53,42 +53,42 @@ $ ddm help
 
 <!-- usage -->
 ```sh-session
-$ npm install -g ddm-cli
-$ ddm COMMAND
+$ npm install -g imagelance-cli
+$ lance COMMAND
 running command...
-$ ddm (--version)
-ddm-cli/2.0.13 darwin-x64 node-v14.17.3
-$ ddm --help [COMMAND]
+$ lance (--version)
+imagelance-cli/2.1.0 darwin-arm64 node-v16.11.1
+$ lance --help [COMMAND]
 USAGE
-  $ ddm COMMAND
+  $ lance COMMAND
 ...
 ```
 <!-- usagestop -->
 
 <!-- commands -->
-* [`ddm autocomplete [SHELL]`](#ddm-autocomplete-shell)
-* [`ddm clone REPONAME`](#ddm-clone-reponame)
-* [`ddm convert-pdf`](#ddm-convert-pdf)
-* [`ddm create`](#ddm-create)
-* [`ddm dev`](#ddm-dev)
-* [`ddm fetch`](#ddm-fetch)
-* [`ddm help [COMMAND]`](#ddm-help-command)
-* [`ddm install`](#ddm-install)
-* [`ddm login`](#ddm-login)
-* [`ddm pull`](#ddm-pull)
-* [`ddm push`](#ddm-push)
-* [`ddm status`](#ddm-status)
-* [`ddm sync`](#ddm-sync)
-* [`ddm update [CHANNEL]`](#ddm-update-channel)
-* [`ddm validate`](#ddm-validate)
+* [`lance autocomplete [SHELL]`](#lance-autocomplete-shell)
+* [`lance clone REPONAME`](#lance-clone-reponame)
+* [`lance convert-pdf`](#lance-convert-pdf)
+* [`lance create`](#lance-create)
+* [`lance dev`](#lance-dev)
+* [`lance fetch`](#lance-fetch)
+* [`lance help [COMMAND]`](#lance-help-command)
+* [`lance install`](#lance-install)
+* [`lance login`](#lance-login)
+* [`lance pull`](#lance-pull)
+* [`lance push`](#lance-push)
+* [`lance status`](#lance-status)
+* [`lance sync`](#lance-sync)
+* [`lance update [CHANNEL]`](#lance-update-channel)
+* [`lance validate`](#lance-validate)
 
-## `ddm autocomplete [SHELL]`
+## `lance autocomplete [SHELL]`
 
 display autocomplete installation instructions
 
 ```
 USAGE
-  $ ddm autocomplete [SHELL] [-r]
+  $ lance autocomplete [SHELL] [-r]
 
 ARGUMENTS
   SHELL  shell type
@@ -100,24 +100,24 @@ DESCRIPTION
   display autocomplete installation instructions
 
 EXAMPLES
-  $ ddm autocomplete
+  $ lance autocomplete
 
-  $ ddm autocomplete bash
+  $ lance autocomplete bash
 
-  $ ddm autocomplete zsh
+  $ lance autocomplete zsh
 
-  $ ddm autocomplete --refresh-cache
+  $ lance autocomplete --refresh-cache
 ```
 
 _See code: [@oclif/plugin-autocomplete](https://github.com/oclif/plugin-autocomplete/blob/v1.3.0/src/commands/autocomplete/index.ts)_
 
-## `ddm clone REPONAME`
+## `lance clone REPONAME`
 
 Clone existing visual
 
 ```
 USAGE
-  $ ddm clone [REPONAME] [-d]
+  $ lance clone [REPONAME] [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -126,15 +126,15 @@ DESCRIPTION
   Clone existing visual
 ```
 
-_See code: [dist/commands/clone.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/clone.ts)_
+_See code: [dist/commands/clone.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/clone.ts)_
 
-## `ddm convert-pdf`
+## `lance convert-pdf`
 
 Convert pdf to jpg
 
 ```
 USAGE
-  $ ddm convert-pdf [-d]
+  $ lance convert-pdf [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -143,15 +143,15 @@ DESCRIPTION
   Convert pdf to jpg
 ```
 
-_See code: [dist/commands/convert-pdf.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/convert-pdf.ts)_
+_See code: [dist/commands/convert-pdf.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/convert-pdf.ts)_
 
-## `ddm create`
+## `lance create`
 
 Creates new visual
 
 ```
 USAGE
-  $ ddm create [-d]
+  $ lance create [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -160,15 +160,15 @@ DESCRIPTION
   Creates new visual
 ```
 
-_See code: [dist/commands/create.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/create.ts)_
+_See code: [dist/commands/create.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/create.ts)_
 
-## `ddm dev`
+## `lance dev`
 
 Run development server to create visuals
 
 ```
 USAGE
-  $ ddm dev [-d] [-l] [-n] [-a]
+  $ lance dev [-d] [-l] [-n] [-a]
 
 FLAGS
   -a, --latest  Start dev with latest edited visual
@@ -180,15 +180,15 @@ DESCRIPTION
   Run development server to create visuals
 ```
 
-_See code: [dist/commands/dev.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/dev.ts)_
+_See code: [dist/commands/dev.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/dev.ts)_
 
-## `ddm fetch`
+## `lance fetch`
 
 Fetch all local visuals
 
 ```
 USAGE
-  $ ddm fetch [-d]
+  $ lance fetch [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -197,15 +197,15 @@ DESCRIPTION
   Fetch all local visuals
 ```
 
-_See code: [dist/commands/fetch.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/fetch.ts)_
+_See code: [dist/commands/fetch.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/fetch.ts)_
 
-## `ddm help [COMMAND]`
+## `lance help [COMMAND]`
 
-Display help for ddm.
+Display help for lance.
 
 ```
 USAGE
-  $ ddm help [COMMAND] [-n]
+  $ lance help [COMMAND] [-n]
 
 ARGUMENTS
   COMMAND  Command to show help for.
@@ -214,32 +214,32 @@ FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
 DESCRIPTION
-  Display help for ddm.
+  Display help for lance.
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.12/src/commands/help.ts)_
 
-## `ddm install`
+## `lance install`
 
 Set home directory for visuals and prepare dev environment
 
 ```
 USAGE
-  $ ddm install
+  $ lance install
 
 DESCRIPTION
   Set home directory for visuals and prepare dev environment
 ```
 
-_See code: [dist/commands/install.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/install.ts)_
+_See code: [dist/commands/install.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/install.ts)_
 
-## `ddm login`
+## `lance login`
 
 Authorize CLI against web application
 
 ```
 USAGE
-  $ ddm login [-d] [-l]
+  $ lance login [-d] [-l]
 
 FLAGS
   -d, --debug  Debug mode
@@ -249,15 +249,15 @@ DESCRIPTION
   Authorize CLI against web application
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/login.ts)_
 
-## `ddm pull`
+## `lance pull`
 
 Pull all local visuals
 
 ```
 USAGE
-  $ ddm pull [-d]
+  $ lance pull [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -266,15 +266,15 @@ DESCRIPTION
   Pull all local visuals
 ```
 
-_See code: [dist/commands/pull.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/pull.ts)_
+_See code: [dist/commands/pull.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/pull.ts)_
 
-## `ddm push`
+## `lance push`
 
 Push all local visuals
 
 ```
 USAGE
-  $ ddm push [-d]
+  $ lance push [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -283,15 +283,15 @@ DESCRIPTION
   Push all local visuals
 ```
 
-_See code: [dist/commands/push.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/push.ts)_
+_See code: [dist/commands/push.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/push.ts)_
 
-## `ddm status`
+## `lance status`
 
 Git status of all local visuals
 
 ```
 USAGE
-  $ ddm status [-d]
+  $ lance status [-d]
 
 FLAGS
   -d, --debug  Debug mode
@@ -300,15 +300,15 @@ DESCRIPTION
   Git status of all local visuals
 ```
 
-_See code: [dist/commands/status.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/status.ts)_
+_See code: [dist/commands/status.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/status.ts)_
 
-## `ddm sync`
+## `lance sync`
 
 Download all synced visuals
 
 ```
 USAGE
-  $ ddm sync [-d] [-s]
+  $ lance sync [-d] [-s]
 
 FLAGS
   -d, --debug    Debug mode
@@ -318,15 +318,15 @@ DESCRIPTION
   Download all synced visuals
 ```
 
-_See code: [dist/commands/sync.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/sync.ts)_
+_See code: [dist/commands/sync.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/sync.ts)_
 
-## `ddm update [CHANNEL]`
+## `lance update [CHANNEL]`
 
-update the ddm CLI
+update the lance CLI
 
 ```
 USAGE
-  $ ddm update [CHANNEL] [-a] [-v <value> | -i] [--force]
+  $ lance update [CHANNEL] [-a] [-v <value> | -i] [--force]
 
 FLAGS
   -a, --available        Install a specific version.
@@ -335,39 +335,39 @@ FLAGS
   --force                Force a re-download of the requested version.
 
 DESCRIPTION
-  update the ddm CLI
+  update the lance CLI
 
 EXAMPLES
   Update to the stable channel:
 
-    $ ddm update stable
+    $ lance update stable
 
   Update to a specific version:
 
-    $ ddm update --version 1.0.0
+    $ lance update --version 1.0.0
 
   Interactively select version:
 
-    $ ddm update --interactive
+    $ lance update --interactive
 
   See available versions:
 
-    $ ddm update --available
+    $ lance update --available
 ```
 
 _See code: [@oclif/plugin-update](https://github.com/oclif/plugin-update/blob/v3.0.0/src/commands/update.ts)_
 
-## `ddm validate`
+## `lance validate`
 
 Validate the config and schema of all local visuals
 
 ```
 USAGE
-  $ ddm validate
+  $ lance validate
 
 DESCRIPTION
   Validate the config and schema of all local visuals
 ```
 
-_See code: [dist/commands/validate.ts](https://github.com/nebe-app/ddm-cli/blob/v2.0.13/dist/commands/validate.ts)_
+_See code: [dist/commands/validate.ts](https://github.com/imagelance/cli/blob/v2.1.0/dist/commands/validate.ts)_
 <!-- commandsstop -->
