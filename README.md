@@ -11,7 +11,7 @@
 
 ### Development stack for creating DDM visuals
 
-[![npm](https://img.shields.io/npm/v/imagelance-cli.svg)](https://www.npmjs.com/package/ddm-cli)
+[![npm](https://img.shields.io/npm/v/imagelance-cli.svg)](https://www.npmjs.com/package/imagelance-cli)
 
 # Installation
 
@@ -33,9 +33,9 @@ yarn global add imagelance-cli
 
 <!-- getting started -->
 
-- Create proper directory structure `$ ddm install`
-- Login to your accounts `$ ddm login`
-- Sync visuals `$ ddm sync`
+- Create proper directory structure `$ lance install`
+- Login to your accounts `$ lance login`
+- Sync visuals `$ lance sync`
 
 <!-- getting started stop -->
 
@@ -44,7 +44,7 @@ yarn global add imagelance-cli
 <!-- list commands -->
 
 ```shell
-$ ddm help
+$ lance help
 ```
 
 <!-- list commands stop -->
