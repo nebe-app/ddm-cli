@@ -1,15 +1,15 @@
 {
-	"name": "ddm-cli",
+	"name": "imagelance-cli",
 	"version": "2.0.13",
 	"description": "Development stack for creating DDM visuals",
 	"author": "Patrik Janosdeak @truesteps",
 	"bin": {
-		"ddm": "./bin/run"
+		"lance": "./bin/run"
 	},
-	"homepage": "https://github.com/nebe-app/ddm-cli",
+	"homepage": "https://github.com/imagelance/cli",
 	"license": "Apache-2.0",
 	"main": "dist/index.js",
-	"repository": "nebe-app/ddm-cli",
+	"repository": "imagelance/cli",
 	"files": [
 		"/bin",
 		"/dist",
@@ -79,8 +79,8 @@
 		"typescript": "^4.6.4"
 	},
 	"oclif": {
-		"bin": "ddm",
-		"dirname": "ddm",
+		"bin": "lance",
+		"dirname": "lance",
 		"commands": "./dist/commands",
 		"plugins": [
 			"@oclif/plugin-help",
@@ -94,14 +94,14 @@
 			"version": "14.17.3"
 		},
 		"macos": {
-			"identifier": "com.ddm.cli"
+			"identifier": "com.lance.cli"
 		},
 		"update": {
 			"s3": {
-				"host": "https://ddm-cli-dist.ddco.app",
+				"host": "https://cli-dist.imagelance.com",
 				"indexVersionLimit": 20,
 				"folder": "",
-				"bucket": "ddm-cli-distributions",
+				"bucket": "imagelance-cli-distributions",
 				"xz": true
 			}
 		}
@@ -118,7 +118,7 @@
 	"engines": {
 		"node": ">=12.0.0"
 	},
-	"bugs": "https://github.com/nebe-app/ddm-cli/issues",
+	"bugs": "https://github.com/imagelance/cli/issues",
 	"keywords": [
 		"oclif"
 	],
