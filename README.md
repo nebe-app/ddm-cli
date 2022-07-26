@@ -11,20 +11,20 @@
 
 ### Development stack for creating DDM visuals
 
-[![npm](https://img.shields.io/npm/v/ddm-cli.svg)](https://www.npmjs.com/package/ddm-cli)
+[![npm](https://img.shields.io/npm/v/imagelance-cli.svg)](https://www.npmjs.com/package/ddm-cli)
 
 # Installation
 
 <!-- installation -->
 
 ```shell
-npm install -g ddm-cli
+npm install -g imagelance-cli
 ```
 
 or
 
 ```shell
-yarn global add ddm-cli
+yarn global add imagelance-cli
 ```
 
 <!-- installation stop -->
