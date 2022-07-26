@@ -1,6 +1,6 @@
 {
 	"name": "imagelance-cli",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"description": "Development stack for creating DDM visuals",
 	"author": "Patrik Janosdeak @truesteps",
 	"bin": {
