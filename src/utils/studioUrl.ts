@@ -5,7 +5,7 @@ export default function studioUrl(url: string): string {
 	// trim slashes
 	url = url.replace(/^\/|\/$/g, '');
 
-	const baseUrl = isLocal() ? 'http://localhost:8060' : 'https://studio.ddco.app';
+	const baseUrl = isLocal() ? 'http://localhost:8060' : 'https://studio.imagelance.com';
 
 	return `${baseUrl}/${url}`;
 };

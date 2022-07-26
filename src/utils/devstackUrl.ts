@@ -9,5 +9,5 @@ export default function devstackUrl(url: string): string {
 		return `http://localhost:3000/api/${url}`;
 	}
 
-	return `https://devstack.ddco.app/api/${url}`;
+	return `https://devstack.imagelance.com/api/${url}`;
 };
