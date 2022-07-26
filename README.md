@@ -57,7 +57,7 @@ $ npm install -g imagelance-cli
 $ lance COMMAND
 running command...
 $ lance (--version)
-imagelance-cli/2.2.1 darwin-arm64 node-v16.11.1
+imagelance-cli/2.2.2 darwin-arm64 node-v16.11.1
 $ lance --help [COMMAND]
 USAGE
   $ lance COMMAND
@@ -126,7 +126,7 @@ DESCRIPTION
   Clone existing visual
 ```
 
-_See code: [dist/commands/clone.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/clone.ts)_
+_See code: [dist/commands/clone.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/clone.ts)_
 
 ## `lance convert-pdf`
 
@@ -143,7 +143,7 @@ DESCRIPTION
   Convert pdf to jpg
 ```
 
-_See code: [dist/commands/convert-pdf.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/convert-pdf.ts)_
+_See code: [dist/commands/convert-pdf.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/convert-pdf.ts)_
 
 ## `lance create`
 
@@ -160,7 +160,7 @@ DESCRIPTION
   Creates new visual
 ```
 
-_See code: [dist/commands/create.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/create.ts)_
+_See code: [dist/commands/create.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/create.ts)_
 
 ## `lance dev`
 
@@ -180,7 +180,7 @@ DESCRIPTION
   Run development server to create visuals
 ```
 
-_See code: [dist/commands/dev.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/dev.ts)_
+_See code: [dist/commands/dev.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/dev.ts)_
 
 ## `lance fetch`
 
@@ -197,7 +197,7 @@ DESCRIPTION
   Fetch all local visuals
 ```
 
-_See code: [dist/commands/fetch.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/fetch.ts)_
+_See code: [dist/commands/fetch.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/fetch.ts)_
 
 ## `lance help [COMMAND]`
 
@@ -231,7 +231,7 @@ DESCRIPTION
   Set home directory for visuals and prepare dev environment
 ```
 
-_See code: [dist/commands/install.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/install.ts)_
+_See code: [dist/commands/install.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/install.ts)_
 
 ## `lance login`
 
@@ -249,7 +249,7 @@ DESCRIPTION
   Authorize CLI against web application
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/login.ts)_
 
 ## `lance pull`
 
@@ -266,7 +266,7 @@ DESCRIPTION
   Pull all local visuals
 ```
 
-_See code: [dist/commands/pull.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/pull.ts)_
+_See code: [dist/commands/pull.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/pull.ts)_
 
 ## `lance push`
 
@@ -283,7 +283,7 @@ DESCRIPTION
   Push all local visuals
 ```
 
-_See code: [dist/commands/push.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/push.ts)_
+_See code: [dist/commands/push.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/push.ts)_
 
 ## `lance status`
 
@@ -300,7 +300,7 @@ DESCRIPTION
   Git status of all local visuals
 ```
 
-_See code: [dist/commands/status.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/status.ts)_
+_See code: [dist/commands/status.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/status.ts)_
 
 ## `lance sync`
 
@@ -318,7 +318,7 @@ DESCRIPTION
   Download all synced visuals
 ```
 
-_See code: [dist/commands/sync.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/sync.ts)_
+_See code: [dist/commands/sync.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/sync.ts)_
 
 ## `lance update [CHANNEL]`
 
@@ -369,5 +369,5 @@ DESCRIPTION
   Validate the config and schema of all local visuals
 ```
 
-_See code: [dist/commands/validate.ts](https://github.com/imagelance/cli/blob/v2.2.1/dist/commands/validate.ts)_
+_See code: [dist/commands/validate.ts](https://github.com/imagelance/cli/blob/v2.2.2/dist/commands/validate.ts)_
 <!-- commandsstop -->
